@@ -14,18 +14,14 @@ mov_avg <- function(x, n = 151) {
 }
 
 
-create_traj_df <- function(ptimes, name, cell_types) {
+create_traj_df <- function(ptimes, name) {
     quantile_points <- seq(0.001, 1, 0.001)
     quantiled_data <- as.numeric(quantile(ptimes, quantile_points))
-    sorted_cell_types <- cell_types[order(ptimes)]
     num_points <- length(ptimes)
     cell_indices <- round(num_points * quantile_points)
-    cell_types_subset <- sorted_cell_types[cell_indices]
 
     return(data.frame(pct = quantile_points,
                       ptime = quantiled_data,
-                      cell_type = factor(cell_types_subset,
-                                         levels = c("Basal", "TA", "TD", "unknown")),
                       diff = c(NA, mov_avg(diff(quantiled_data))),
                       sample_class = rep(name, length(quantile_points))))
 }
