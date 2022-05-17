@@ -10,6 +10,7 @@ output:
             collapsed: false
         number_sections: true
         code_folding: none
+        keep_md: yes
 ---
 
 ```{r results = 'hide', message = FALSE, warning = FALSE, include = FALSE}
