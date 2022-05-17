@@ -1025,20 +1025,13 @@ linetype_legend <- as_ggplot(get_legend(for_linetype_legend, "right"))
 ## Generating confidence intervals
 
 ```{r results = 'markup'}
-# Generate bootstrapped data as in "experiment_code_trajectories.R", then
-# convert the output to csv using Python:
-# import sys
-# for file_name in sys.argv[1:]:
-#     with open(file_name) as f:
-#         for line in f:
-#             splat = line[1:-1].split()
-#             rejoin = ",".join(splat[1:])
-#             print(rejoin[1:-1])
-# and save as "trajectory_comparison_results.csv". Then:
-bootstrap_results <- read.csv("trajectory_comparison_results.csv", header = FALSE,
-                              col.names = c("ResampleIndex", "TrajDiff6D",
-                                            "TrajDiff12D", "SpeedDiff6D",
-                                            "SpeedDiff12D"))
+# Generate bootstrapped data as in "experiment_code_trajectories.R" and save
+# the outputs as "trajectory_comparison_results.txt"
+
+bootstrap_results <- read.table("trajectory_comparison_results.txt")
+bootstrap_results <- bootstrap_results[, c(3, 4, 5, 6)]
+colnames(bootstrap_results) <- c("TrajDiff6D", "TrajDiff12D", "SpeedDiff6D",
+                                 "SpeedDiff12D")
 
 diffs_quants_traj6d <- quantile((bootstrap_results$TrajDiff6D - obs_result_ptime_6d),
                                 alpha_vals)
