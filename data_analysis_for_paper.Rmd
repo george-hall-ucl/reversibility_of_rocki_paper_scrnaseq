@@ -397,6 +397,8 @@ marks_6d <- FindMarkers(skin_data, ident.1 = "ROCKi-6D",
 marks_12d <- FindMarkers(skin_data, ident.1 = "ROCKi-12D",
                          ident.2 = "Control-12D")
 
+not_sig_color <- "#4D4D4D"
+
 VolPlot <- function(marks) {
     marks$p_val_adj_neg_log <- (-1) * log10(marks$p_val_adj)
     marks$p_val_adj_neg_log[is.infinite(marks$p_val_adj_neg_log)] <- 300
@@ -415,29 +417,13 @@ VolPlot <- function(marks) {
                               label = rownames(marks))) +
             geom_point(aes(color = de_class, fill = de_class), size = 2,
                        shape = 21, alpha = 0.5) +
-            scale_color_manual(values = c("gray", "#D6CB7A", "red", "white")) +
-            scale_fill_manual(values = c("gray", "#D6CB7A", "white", "red")) +
-            geom_text_repel(data = sig_marks_pos,
-                            aes(label = rownames(sig_marks_pos)),
-                            min.segment.length = 0, size = 3, xlim = c(1, NA),
-                            force = 10, segment.alpha=0.5) +
-            geom_text_repel(data = sig_marks_neg,
-                            aes(label = rownames(sig_marks_neg)),
-                            min.segment.length = 0, size = 3, xlim = c(NA, -1),
-                            force = 10, segment.alpha=0.5) +
+            scale_color_manual(values = c("gray", not_sig_color, "red", "white")) +
+            scale_fill_manual(values = c("gray", not_sig_color, "white", "red")) +
             geom_vline(xintercept = -1, linetype = "dashed", alpha = 0.5) +
             geom_vline(xintercept = 1, linetype = "dashed", alpha = 0.5) +
             xlim(-2.5, 2.5) + ylim(-log10(0.01), 350) +
-            xlab(bquote(Log["2"]~"fold change")) +
-            annotation_custom(textGrob("Downregulated in treated cells",
-                                        gp = gpar(fontsize = 8)),
-                              xmax = -1.2, ymin = x_sublabel_y,
-                              ymax = x_sublabel_y) +
-            annotation_custom(textGrob("Upregulated in treated cells",
-                                        gp = gpar(fontsize = 8)),
-                              xmin = 1.2, ymin = x_sublabel_y,
-                              ymax = x_sublabel_y) +
-            ylab(bquote(-Log["10"] ~ P)) +
+            xlab(bquote(bold(Log["2"]~"fold change"))) +
+            ylab(bquote(bold(-Log["10"] ~ P))) +
             theme(legend.position="none",
                   panel.grid.major = element_blank(),
                   panel.grid.minor = element_blank(),
@@ -462,9 +448,9 @@ vol_6d_legend_plot <- ggplot(data.frame(class = as.character(1:length(labels)),
                                         x = 1:length(labels)),
                              aes(x = x, y = x, color = class, fill = class)) +
                       geom_point(size = 3, shape = 21, alpha = 0.5) +
-                      scale_fill_manual(values = c("white", "#D6CB7A", "red"),
+                      scale_fill_manual(values = c("white", not_sig_color, "red"),
                                         labels = labels) +
-                      scale_color_manual(values = c("red", "#D6CB7A", "white"),
+                      scale_color_manual(values = c("red", not_sig_color, "white"),
                                          labels = labels) +
                       theme(legend.title = element_blank(),
                             legend.key = element_rect(fill = NA, color = NA),
