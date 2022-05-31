@@ -46,7 +46,11 @@ theme_update(plot.title = element_text(face="bold", size=12, hjust=0.5))
 theme_update(axis.text = element_text(size = 10, face = "plain"))
 theme_update(axis.title = element_text(size = 10, face = "plain"))
 
-text_size <- 12
+axis_text_theme <- theme(axis.title = element_text(face = "bold",
+                                                   color = "black"),
+                         axis.text = element_text(face = "bold",
+                                                  color = "black"))
+
 blue_color <- "#6E86FF"
 red_color <- "#FF8585"
 ```
@@ -99,7 +103,7 @@ VlnPlot_limits <- function(data, metric, ylab, limits) {
             scale_y_continuous(labels = scales::comma) +
             theme(axis.text.x = element_text(angle = 45, hjust=1),
                   legend.position = "none", plot.title = element_blank(),
-                  axis.title.x = element_blank())
+                  axis.title.x = element_blank()) + axis_text_theme
 
     return(plot)
 }
@@ -276,22 +280,26 @@ umap_lims <- coord_cartesian(xlim = c(xmin, xmax),  ylim = c(ymin, ymax))
 chart_margin_theme <- theme(plot.margin = margin(0, 1.2, 0, 1.2, "cm"))
 
 labels <- c("Control", "ROCKi-treated")
-umap_d6_legend_plot <- ggplot(data.frame(class = as.character(1:length(labels)),
-                                         x = 1:length(labels)),
-                              aes(x = x, y = x, col = class)) +
-                       geom_point() +
-                       scale_color_manual(labels = labels,
-                                          values = c(blue_color, red_color)) +
-                       theme(legend.title=element_blank(),
-                             legend.key = element_rect(fill = NA, color = NA),
-                             legend.margin=margin(c(0,0,0,0)),
-                             legend.background = element_rect(fill="#00000000",
-                                                              size=0.5,
-                                                              linetype="solid")) +
-                       guides(colour = guide_legend(override.aes = list(size=2)))
-umap_d6_legend <- as_ggplot(get_legend(umap_d6_legend_plot, "left"))
+umap_legend_plot <- ggplot(data.frame(class = as.character(1:length(labels)),
+                                      x = 1:length(labels)),
+                           aes(x = x, y = x, col = class)) +
+                    geom_point() +
+                    scale_color_manual(labels = labels,
+                                       values = c(blue_color, red_color)) +
+                    theme(legend.title = element_blank(),
+                          legend.key = element_rect(fill = NA, color = NA),
+                          legend.margin = margin(c(0,0,0,0)),
+                          legend.text = element_text(face = "bold"),
+                          legend.background = element_rect(fill="#00000000",
+                                                           size=0.5,
+                                                           linetype="solid")) +
+                    guides(colour = guide_legend(override.aes = list(size=2)))
+umap_legend <- as_ggplot(get_legend(umap_legend_plot, "left"))
+if(save_images) {
+    save_tiff(umap_legend, "umap_legend.tiff")
+}
 
-plot_treatment_class_umap <- function(cells, umap_lims) {
+plot_treatment_class_umap <- function(cells) {
     p <- DimPlot(cells, group.by = "treatment_class",
                  cols = c(blue_color, red_color),
                  pt.size = -0.1) +
@@ -428,6 +436,7 @@ VolPlot <- function(marks) {
                   panel.grid.minor = element_blank(),
                   panel.background = element_blank(),
                   axis.line = element_line(color = "black")) +
+            axis_text_theme +
             coord_cartesian(clip = "off")
 
     return (plot)
@@ -435,9 +444,9 @@ VolPlot <- function(marks) {
 
 vol_6d <- VolPlot(marks_6d) + ggtitle("Differentially Expressed Genes at 6D")
 
-labels <- c(bquote(Log["2"]~"fold change ≤ -1"),
-            bquote("|"*Log["2"]~"fold change| < 1"),
-            bquote(Log["2"]~"fold change ≥ 1"))
+labels <- c(bquote(bold(Log["2"]~"fold change ≤ -1")),
+            bquote(bold("|"*Log["2"]~"fold change| < 1")),
+            bquote(bold(Log["2"]~"fold change ≥ 1")))
 
 vol_6d_legend_plot <- ggplot(data.frame(class = as.character(1:length(labels)),
                                         x = 1:length(labels)),
@@ -449,6 +458,7 @@ vol_6d_legend_plot <- ggplot(data.frame(class = as.character(1:length(labels)),
                                          labels = labels) +
                       theme(legend.title = element_blank(),
                             legend.key = element_rect(fill = NA, color = NA),
+                            legend.text = element_text(face = "bold"),
                             legend.margin=margin(unit(c(0, 0, 0, 0), "cm"))) +
                       guides(colour = guide_legend(override.aes = list(size = 2)))
 
@@ -534,7 +544,8 @@ create_cell_type_proportion_graph <- function(df) {
                                "Differentiated",
                                "Unclassified keratinocytes"),
                       values = c("#80C9EA", "#DD6E79", "#43863E", "#BBBBBB")) +
-    chart_margin_theme +
+    scale_x_discrete(labels = names) +
+    chart_margin_theme + axis_text_theme +
     theme(axis.text.x = element_text(angle = 45,
                                      hjust = 1),
           axis.title.x = element_blank())
@@ -988,7 +999,7 @@ create_speed_plot <- function(traj_df) {
                   scale_x_continuous(labels = scales::percent, limits = c(0,1)) +
                   xlab("Percentage through differentation process") +
                   ylab("Differentiation speed") + traj_plot_margin_theme +
-                  diff_comparison_plots_theme
+                  diff_comparison_plots_theme + axis_text_theme
 
     return(speed_plot)
 }
@@ -1008,7 +1019,8 @@ for_dot_colour_legend <- ggplot(traj_df_6d,
                                             labels = c("Holoclone-forming",
                                                        "Mero- or Paraclone-forming",
                                                        "Differentiated")) +
-                         theme(legend.title = element_blank())
+                         theme(legend.title = element_blank(),
+                               legend.text = element_text(face = "bold"))
 dot_colour_legend <- as_ggplot(get_legend(for_dot_colour_legend, "right"))
 
 for_linetype_legend <- ggplot(traj_df_6d,
