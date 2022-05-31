@@ -1,7 +1,7 @@
 ---
 title: "Impact of ROCKi Treatment on Keratinocytes is Reversible: Single-Cell RNAseq Data Analysis"
 author: "George T. Hall"
-date: "Compiled on 17 May 2022"
+date: "Compiled on 30 May 2022"
 output:
     html_document:
         toc: true
@@ -83,7 +83,7 @@ ncount_df <- data.frame(x = levels(Idents(skin_data)),
                                ncount_df) + ylim(c(0, 100000)))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
 
 ```r
 # tiff("paper_figs/fig_s4a.tiff", units="cm", width=10, height=10, res=300); ncount_vln; dev.off()
@@ -101,7 +101,7 @@ nfeature_df <- data.frame(x = levels(Idents(skin_data)),
                                nfeature_df))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-3-2.png" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-3-2.png" style="display: block; margin: auto;" />
 
 ```r
 # tiff("paper_figs/fig_s4b.tiff", units="cm", width=10, height=10, res=300); nfeature_vln; dev.off()
@@ -115,7 +115,7 @@ pct_mito_df <- data.frame(x = levels(Idents(skin_data)),
                                pct_mito_df) + ylim(c(0, 20)))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-3-3.png" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-3-3.png" style="display: block; margin: auto;" />
 
 ```r
 # tiff("paper_figs/fig_s4c.tiff", units="cm", width=10, height=10, res=300); pct_mito_vln; dev.off()
@@ -200,7 +200,7 @@ skin_data <- RunPCA(skin_data, features = skin_data@assays$SCT@var.features,
 (elbow_plot <- ElbowPlot(skin_data, ndims = 50))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
 
 ```r
 # tiff("paper_figs/fig_s5.tiff", units="cm", width=8, height=8, res=300); elbow_plot; dev.off()
@@ -300,7 +300,7 @@ plot_treatment_class_umap <- function(cells, umap_lims) {
            ggtitle("UMAP of Cells at 6D"))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-8-1.png" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-8-1.png" style="display: block; margin: auto;" />
 
 ```r
 # tiff("paper_figs/fig_5a.tiff", units="cm", width=10, height=8, res=300); umap_d6; dev.off()
@@ -309,7 +309,7 @@ plot_treatment_class_umap <- function(cells, umap_lims) {
            ggtitle("UMAP of Cells at 12D"))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-8-2.png" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-8-2.png" style="display: block; margin: auto;" />
 
 ```r
 # tiff("paper_figs/fig_5b.tiff", units="cm", width=10, height=8, res=300); umap_d12; dev.off()
@@ -356,7 +356,7 @@ create_daseq_umap <- function(daseq_out, umap_lims) {
  ggtitle("Differential abundance probabilities at 6D"))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-9-1.png" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-9-1.png" style="display: block; margin: auto;" />
 
 ```r
 # tiff("paper_figs/fig_5c.tiff", units="cm", width=10, height=8, res=300); daseq_umap_6d; dev.off()
@@ -364,7 +364,7 @@ create_daseq_umap <- function(daseq_out, umap_lims) {
  ggtitle("Differential abundance probabilities at 12D"))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-9-2.png" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-9-2.png" style="display: block; margin: auto;" />
 
 ```r
 # tiff("paper_figs/fig_5d.tiff", units="cm", width=10, height=8, res=300); daseq_umap_12d; dev.off()
@@ -481,13 +481,13 @@ vol_6d_legend <- as_ggplot(get_legend(vol_6d_legend_plot, "right"))
                                                  xmin = 1, ymin = 200))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-11-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-11-1.png" width="100%" style="display: block; margin: auto;" />
 
 ```r
 (vol_12d <- VolPlot(marks_12d) + ggtitle("Differentially Expressed Genes at 12D"))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-11-2.png" width="100%" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-11-2.png" width="100%" style="display: block; margin: auto;" />
 
 ```r
 # tiff("paper_figs/fig_5e.tiff", units="cm", width=10, height=5, res=300); vol_6d_with_legend; dev.off()
@@ -542,28 +542,28 @@ rocki12d_cells <- subset(d12_cells, treatment_class == "ROCKi")
                          ggtitle("Distribution of Cell Types\nfor Control Cells at 6D"))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-12-1.png" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-12-1.png" style="display: block; margin: auto;" />
 
 ```r
 (cell_type_umap_rocki6d <- create_cell_type_umap(rocki6d_cells) +
                          ggtitle("Distribution of Cell Types\nfor ROCKi-Treated Cells at 6D"))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-12-2.png" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-12-2.png" style="display: block; margin: auto;" />
 
 ```r
 (cell_type_umap_ctrl12d <- create_cell_type_umap(ctrl12d_cells) +
                          ggtitle("Distribution of Cell Types\nfor Control Cells at 12D"))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-12-3.png" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-12-3.png" style="display: block; margin: auto;" />
 
 ```r
 (cell_type_umap_rocki12d <- create_cell_type_umap(rocki12d_cells) +
                          ggtitle("Distribution of Cell Types\nfor ROCKi-Treated Cells at 12D"))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-12-4.png" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-12-4.png" style="display: block; margin: auto;" />
 
 ```r
 # tiff("paper_figs/fig_6a.tiff", units="cm", width=10, height=8, res=300); cell_type_umap_ctrl6d; dev.off()
@@ -599,7 +599,7 @@ cell_type_proportion_graph_6d <- create_cell_type_proportion_graph(cell_type_df_
 (cell_type_proportion_graph_6d_no_legend <- cell_type_proportion_graph_6d + theme(legend.position = "none"))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-12-5.png" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-12-5.png" style="display: block; margin: auto;" />
 
 ```r
 # tiff("paper_figs/fig_6e.tiff", units="cm", width=6, height=6, res=300); cell_type_proportion_graph_6d_no_legend; dev.off()
@@ -614,7 +614,7 @@ cell_type_proportion_graph_12d <- create_cell_type_proportion_graph(cell_type_df
 (cell_type_proportion_graph_12d_no_legend <- cell_type_proportion_graph_12d + theme(legend.position = "none"))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-12-6.png" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-12-6.png" style="display: block; margin: auto;" />
 
 ```r
 # tiff("paper_figs/fig_6f.tiff", units="cm", width=6, height=6, res=300); cell_type_proportion_graph_12d_no_legend; dev.off()
@@ -973,25 +973,25 @@ rocki12d_traj_umap <- create_traj_umap(sshot_rocki12d_separate, umap_curve_rocki
 (ctrl6d_traj_umap_no_legend <- ctrl6d_traj_umap + theme(legend.position = "none"))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-17-1.png" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-17-1.png" style="display: block; margin: auto;" />
 
 ```r
 (rocki6d_traj_umap_no_legend <- rocki6d_traj_umap + theme(legend.position = "none"))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-17-2.png" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-17-2.png" style="display: block; margin: auto;" />
 
 ```r
 (ctrl12d_traj_umap_no_legend <- ctrl12d_traj_umap + theme(legend.position = "none"))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-17-3.png" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-17-3.png" style="display: block; margin: auto;" />
 
 ```r
 (rocki12d_traj_umap_no_legend <- rocki12d_traj_umap + theme(legend.position = "none"))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-17-4.png" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-17-4.png" style="display: block; margin: auto;" />
 
 ```r
 # tiff("paper_figs/fig_7a.tiff", units="cm", width=10, height=8, res=300); ctrl6d_traj_umap_no_legend; dev.off()
@@ -1100,13 +1100,13 @@ traj_plot_12d <- create_traj_plot(traj_df_12d) + ggtitle("Comparison of 12D Traj
 (traj_plot_6d_no_legend <- traj_plot_6d + theme(legend.position = "none"))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-18-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-18-1.png" width="100%" style="display: block; margin: auto;" />
 
 ```r
 (traj_plot_12d_no_legend <- traj_plot_12d + theme(legend.position = "none"))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-18-2.png" width="100%" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-18-2.png" width="100%" style="display: block; margin: auto;" />
 
 ```r
 # tiff("paper_figs/fig_7e.tiff", units="cm", width=10, height=8, res=300); traj_plot_6d_no_legend; dev.off()
@@ -1135,14 +1135,14 @@ create_speed_plot <- function(traj_df) {
                  ggtitle("Comparison of Differentiation\nSpeeds at 6D"))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-18-3.png" width="100%" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-18-3.png" width="100%" style="display: block; margin: auto;" />
 
 ```r
 (speed_plot_12d <- create_speed_plot(traj_df_12d) +
                   ggtitle("Comparison of Differentiation\nSpeeds at 12D"))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-18-4.png" width="100%" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-18-4.png" width="100%" style="display: block; margin: auto;" />
 
 ```r
 # tiff("paper_figs/fig_s3a.tiff", units="cm", width=14, height=8, res=300); speed_plot_6d; dev.off()
@@ -1169,7 +1169,7 @@ linetype_legend <- as_ggplot(get_legend(for_linetype_legend, "right"))
 (legends <- ggarrange(linetype_legend, dot_colour_legend, ncol = 2))
 ```
 
-<img src="data_analysis_for_paper_files/figure-html/unnamed-chunk-18-5.png" width="100%" style="display: block; margin: auto;" />
+<img src="data_analysis_for_paper_1716170522_files/figure-html/unnamed-chunk-18-5.png" width="100%" style="display: block; margin: auto;" />
 
 ```r
 # tiff("paper_figs/fig_7_legends.tiff", units="cm", width=10, height=8, res=300); legends; dev.off()
