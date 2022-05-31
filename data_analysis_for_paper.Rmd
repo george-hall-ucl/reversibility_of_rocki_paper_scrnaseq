@@ -374,7 +374,6 @@ if(save_images) {
 
 proportion_da_6d <- length(c(daseq_out_6d$da.down, daseq_out_6d$da.up)) / length(colnames(d6_cells))
 proportion_da_12d <- length(c(daseq_out_12d$da.down, daseq_out_12d$da.up)) / length(colnames(d12_cells))
-
 ```
 
 ```{r results = 'markup'}
@@ -533,11 +532,11 @@ cell_type_df_6d$Class <- factor(cell_type_df_6d$Class,
 create_cell_type_proportion_graph <- function(df) {
     p <- ggplot(df, aes(x = Class, fill = CellType)) +
     geom_bar(position = "fill") + ylab("Proportion of cell type") +
-    labs(fill="Cell type") +
-    scale_fill_manual(labels=c("Holoclone-forming",
-                               "Mero- or Paraclone-forming",
-                               "Differentiated",
-                               "Unclassified keratinocytes"),
+    labs(fill = "Cell type") +
+    scale_fill_manual(labels = c("Holoclone-forming",
+                                 "Mero- or Paraclone-forming",
+                                 "Differentiated",
+                                 "Unclassified keratinocytes"),
                       values = c("#80C9EA", "#DD6E79", "#43863E", "#BBBBBB")) +
     scale_x_discrete(labels = names) +
     chart_margin_theme + axis_text_theme +
@@ -993,10 +992,6 @@ if (save_images) {
 
 
 create_speed_plot <- function(traj_df) {
-    #basal_color <- "#80C9EA"
-    #ta_color <- "#DD6E79"
-    #td_color <- "#43863E"
-
     speed_plot <- ggplot(traj_df, aes(x = pct, y = diff, group = sample_class)) +
                   geom_point(aes(color = cell_type), size = point_size) +
                   scale_color_manual(values = c("#80C9EA", "#DD6E79", "#43863E")) +
