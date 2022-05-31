@@ -53,6 +53,15 @@ axis_text_theme <- theme(axis.title = element_text(face = "bold",
 
 blue_color <- "#6E86FF"
 red_color <- "#FF8585"
+
+save_images <- TRUE
+save_tiff <- function(img, img_name, units = "cm", width = 10, height = 10,
+                      res = 300) {
+    img_path <- paste0("paper_figs/", img_name)
+    tiff(img_path, units = units, width = width, height = height, res = res)
+    print(img)
+    dev.off()
+}
 ```
 
 # Data pre-processing
@@ -119,7 +128,9 @@ ncount_df <- data.frame(x = levels(Idents(skin_data)),
 (ncount_vln <- VlnPlot_limits(skin_data, "nCount_RNA",
                                "Number of RNA\nmolecules per cell",
                                ncount_df) + ylim(c(0, 100000)))
-# tiff("paper_figs/fig_s4a.tiff", units="cm", width=10, height=10, res=300); ncount_vln; dev.off()
+if(save_images) {
+    save_tiff(ncount_vln, "fig_s4a.tiff")
+}
 
 nfeature_df <- data.frame(x = levels(Idents(skin_data)),
                      lower = c(2500, 3000, 2500, 2500,
@@ -132,7 +143,9 @@ nfeature_df <- data.frame(x = levels(Idents(skin_data)),
 (nfeature_vln <- VlnPlot_limits(skin_data, "nFeature_RNA",
                                "Number of genes\ndetected per cell",
                                nfeature_df))
-# tiff("paper_figs/fig_s4b.tiff", units="cm", width=10, height=10, res=300); nfeature_vln; dev.off()
+if(save_images) {
+    save_tiff(nfeature_vln, "fig_s4b.tiff")
+}
 
 pct_mito_df <- data.frame(x = levels(Idents(skin_data)),
                         lower = c(rep(2, 8), rep(3, 4)),
@@ -141,7 +154,9 @@ pct_mito_df <- data.frame(x = levels(Idents(skin_data)),
 (pct_mito_vln <- VlnPlot_limits(skin_data, "percent.mt",
                                "Percentage of mitochrondrial\nDNA detected per cell",
                                pct_mito_df) + ylim(c(0, 20)))
-# tiff("paper_figs/fig_s4c.tiff", units="cm", width=10, height=10, res=300); pct_mito_vln; dev.off()
+if(save_images) {
+    save_tiff(pct_mito_vln, "fig_s4c.tiff")
+}
 
 pass_qc <- c()
 for (j in 1:length(skin_data@meta.data$orig.ident)) {
@@ -216,8 +231,10 @@ variation with Harmony.
 # Run PCA
 skin_data <- RunPCA(skin_data, features = skin_data@assays$SCT@var.features,
                     npcs = 50)
-(elbow_plot <- ElbowPlot(skin_data, ndims = 50))
-# tiff("paper_figs/fig_s5.tiff", units="cm", width=8, height=8, res=300); elbow_plot; dev.off()
+(elbow_plot <- ElbowPlot(skin_data, ndims = 50) + axis_text_theme)
+if(save_images) {
+    save_tiff(elbow_plot, "fig_s5.tiff")
+}
 
 # Remove inter-donor differences using Harmony
 donor_idents <- sapply(skin_data@meta.data$orig.ident,
@@ -313,13 +330,15 @@ plot_treatment_class_umap <- function(cells) {
     return(p)
 }
 
-(umap_d6 <- plot_treatment_class_umap(d6_cells, umap_lims) +
-           ggtitle("UMAP of Cells at 6D"))
-# tiff("paper_figs/fig_5a.tiff", units="cm", width=10, height=8, res=300); umap_d6; dev.off()
+(umap_d6 <- plot_treatment_class_umap(d6_cells))
+if(save_images) {
+    save_tiff(umap_d6, "fig_5a.tiff")
+}
 
-(umap_d12 <- plot_treatment_class_umap(d12_cells, umap_lims) +
-           ggtitle("UMAP of Cells at 12D"))
-# tiff("paper_figs/fig_5b.tiff", units="cm", width=10, height=8, res=300); umap_d12; dev.off()
+(umap_d12 <- plot_treatment_class_umap(d12_cells))
+if(save_images) {
+    save_tiff(umap_d12, "fig_5b.tiff")
+}
 ```
 
 Visualising the 6D and 12D cell populations using UMAP provides an intuitive
@@ -343,27 +362,30 @@ daseq_out_12d <- getDAcells(d12_cells@reductions$harmony@cell.embeddings,
                             labels.2 = c("ROCKi-12D"),
                             plot.embedding = d12_cells@reductions$umap@cell.embeddings)
 
-create_daseq_umap <- function(daseq_out, umap_lims) {
-    daseq_legend <- as_ggplot(get_legend(daseq_out$pred.plot +
-                                         umap_theme +
-                                         theme(legend.position = "top",
-                                               legend.text = element_text(size = 8))))
-    daseq_umap <- daseq_out$pred.plot + umap_lims + umap_theme + theme(legend.position = "none")
-    out_umap <- daseq_umap + annotation_custom(ggplotGrob(daseq_legend),
-                                               xmin = umap_lims$limits$x[2] - 5,
-                                               xmax = umap_lims$limits$x[2] - 4,
-                                               ymin = umap_lims$limits$y[1],
-                                               ymax = umap_lims$limits$y[1] + 1)
+daseq_legend <- as_ggplot(get_legend(daseq_out_12d$pred.plot +
+                                     umap_theme +
+                                     theme(legend.position = "top",
+                                           legend.text = element_blank())))
 
-    return(out_umap)
+if(save_images) {
+    save_tiff(daseq_legend, "daseq_legend.tiff")
 }
 
-(daseq_umap_6d <- create_daseq_umap(daseq_out_6d, umap_lims) +
- ggtitle("Differential abundance probabilities at 6D"))
-# tiff("paper_figs/fig_5c.tiff", units="cm", width=10, height=8, res=300); daseq_umap_6d; dev.off()
-(daseq_umap_12d <- create_daseq_umap(daseq_out_12d, umap_lims) +
- ggtitle("Differential abundance probabilities at 12D"))
-# tiff("paper_figs/fig_5d.tiff", units="cm", width=10, height=8, res=300); daseq_umap_12d; dev.off()
+create_daseq_umap <- function(daseq_out) {
+    daseq_umap <- daseq_out$pred.plot + umap_theme + theme(legend.position = "none")
+
+    return(daseq_umap)
+}
+
+(daseq_umap_6d <- create_daseq_umap(daseq_out_6d))
+if(save_images) {
+    save_tiff(daseq_umap_6d, "fig_5c.tiff")
+}
+
+(daseq_umap_12d <- create_daseq_umap(daseq_out_12d))
+if(save_images) {
+    save_tiff(daseq_umap_12d, "fig_5d.tiff")
+}
 
 proportion_da_6d <- length(c(daseq_out_6d$da.down, daseq_out_6d$da.up)) / length(colnames(d6_cells))
 proportion_da_12d <- length(c(daseq_out_12d$da.down, daseq_out_12d$da.up)) / length(colnames(d12_cells))
@@ -442,7 +464,10 @@ VolPlot <- function(marks) {
     return (plot)
 }
 
-vol_6d <- VolPlot(marks_6d) + ggtitle("Differentially Expressed Genes at 6D")
+(vol_6d <- VolPlot(marks_6d))
+if(save_images) {
+    save_tiff(vol_6d, "fig_5e.tiff", height = 5, width = 10)
+}
 
 labels <- c(bquote(bold(Log["2"]~"fold change ≤ -1")),
             bquote(bold("|"*Log["2"]~"fold change| < 1")),
@@ -462,14 +487,15 @@ vol_6d_legend_plot <- ggplot(data.frame(class = as.character(1:length(labels)),
                             legend.margin=margin(unit(c(0, 0, 0, 0), "cm"))) +
                       guides(colour = guide_legend(override.aes = list(size = 2)))
 
-vol_6d_legend <- as_ggplot(get_legend(vol_6d_legend_plot, "right"))
-(vol_6d_with_legend <- vol_6d + annotation_custom(ggplotGrob(vol_6d_legend),
-                                                 xmin = 1, ymin = 200))
+volplot_legend <- as_ggplot(get_legend(vol_6d_legend_plot, "right"))
+if(save_images) {
+    save_tiff(volplot_legend, "volplot_legend.tiff")
+}
 
-(vol_12d <- VolPlot(marks_12d) + ggtitle("Differentially Expressed Genes at 12D"))
-
-# tiff("paper_figs/fig_5e.tiff", units="cm", width=10, height=5, res=300); vol_6d_with_legend; dev.off()
-# tiff("paper_figs/fig_5f.tiff", units="cm", width=10, height=5, res=300); vol_12d; dev.off()
+(vol_12d <- VolPlot(marks_12d))
+if(save_images) {
+    save_tiff(vol_12d, "fig_5f.tiff", height = 5, width = 10)
+}
 ```
 
 # Cell Type Proportions in Treated / Untreated
@@ -524,10 +550,12 @@ rocki12d_cells <- subset(d12_cells, treatment_class == "ROCKi")
 (cell_type_umap_rocki12d <- create_cell_type_umap(rocki12d_cells) +
                          ggtitle("Distribution of Cell Types\nfor ROCKi-Treated Cells at 12D"))
 
-# tiff("paper_figs/fig_6a.tiff", units="cm", width=10, height=8, res=300); cell_type_umap_ctrl6d; dev.off()
-# tiff("paper_figs/fig_6b.tiff", units="cm", width=10, height=8, res=300); cell_type_umap_ctrl12d; dev.off()
-# tiff("paper_figs/fig_6c.tiff", units="cm", width=10, height=8, res=300); cell_type_umap_rocki6d; dev.off()
-# tiff("paper_figs/fig_6d.tiff", units="cm", width=10, height=8, res=300); cell_type_umap_rocki12d; dev.off()
+if (save_images) {
+    save_tiff(cell_type_umap_ctrl6d, "fig_6a.tiff")
+    save_tiff(cell_type_umap_ctrl12d, "fig_6b.tiff")
+    save_tiff(cell_type_umap_rocki6d, "fig_6c.tiff")
+    save_tiff(cell_type_umap_rocki12d, "fig_6d.tiff")
+}
 
 cell_type_df_6d <- data.frame(CellType = d6_cells@meta.data$cell_type_pred,
                            Class = d6_cells@meta.data$sample_class)
@@ -556,7 +584,11 @@ create_cell_type_proportion_graph <- function(df) {
 cell_type_proportion_graph_6d <- create_cell_type_proportion_graph(cell_type_df_6d) +
                                  ggtitle("Cell Type\nProportions at 6D")
 (cell_type_proportion_graph_6d_no_legend <- cell_type_proportion_graph_6d + theme(legend.position = "none"))
-# tiff("paper_figs/fig_6e.tiff", units="cm", width=6, height=6, res=300); cell_type_proportion_graph_6d_no_legend; dev.off()
+
+if (save_images) {
+    save_tiff(cell_type_proportion_graph_6d_no_legend, "fig_6e.tiff",
+              width = 6, height = 6)
+}
 
 cell_type_df_12d <- data.frame(CellType = d12_cells@meta.data$cell_type_pred,
                            Class = d12_cells@meta.data$sample_class)
@@ -566,7 +598,10 @@ cell_type_df_12d$Class <- factor(cell_type_df_12d$Class,
 cell_type_proportion_graph_12d <- create_cell_type_proportion_graph(cell_type_df_12d) +
                                  ggtitle("Cell Type\nProportions at 12D")
 (cell_type_proportion_graph_12d_no_legend <- cell_type_proportion_graph_12d + theme(legend.position = "none"))
-# tiff("paper_figs/fig_6f.tiff", units="cm", width=6, height=6, res=300); cell_type_proportion_graph_12d_no_legend; dev.off()
+if (save_images) {
+    save_tiff(cell_type_proportion_graph_12d_no_legend, "fig_6f.tiff",
+              width = 6, height = 6)
+}
 ```
 
 We can see that at the 6D point there is a large difference in the proportion
@@ -682,9 +717,11 @@ td_cells <- subset(skin_data, subset = cell_type_pred == "TD")
 (ta_dp <- create_dotplot(ta_cells) + ggtitle("Para- and meroclones"))
 (td_dp <- create_dotplot(td_cells) + ggtitle("Differentiated cells"))
 
-# tiff("paper_figs/fig_6g.tiff", units="cm", width=20, height=8, res=300); holo_dp; dev.off()
-# tiff("paper_figs/fig_s2a.tiff", units="cm", width=20, height=8, res=300); ta_dp; dev.off()
-# tiff("paper_figs/fig_s2b.tiff", units="cm", width=20, height=8, res=300); td_dp; dev.off()
+if (save_images) {
+    save_tiff(holo_dp, "fig_6g.tiff", width = 20, height = 8)
+    save_tiff(ta_dp, "fig_s2a.tiff", width = 20, height = 8)
+    save_tiff(td_dp, "fig_s2b.tiff", width = 20, height = 8)
+}
 ```
 
 # Trajectory Inference and Comparison
@@ -877,10 +914,12 @@ rocki12d_traj_umap <- create_traj_umap(sshot_rocki12d_separate, umap_curve_rocki
 (ctrl12d_traj_umap_no_legend <- ctrl12d_traj_umap + theme(legend.position = "none"))
 (rocki12d_traj_umap_no_legend <- rocki12d_traj_umap + theme(legend.position = "none"))
 
-# tiff("paper_figs/fig_7a.tiff", units="cm", width=10, height=8, res=300); ctrl6d_traj_umap_no_legend; dev.off()
-# tiff("paper_figs/fig_7b.tiff", units="cm", width=10, height=8, res=300); rocki6d_traj_umap_no_legend; dev.off()
-# tiff("paper_figs/fig_7c.tiff", units="cm", width=10, height=8, res=300); ctrl12d_traj_umap_no_legend; dev.off()
-# tiff("paper_figs/fig_7d.tiff", units="cm", width=10, height=8, res=300); rocki12d_traj_umap_no_legend; dev.off()
+if (save_images) {
+    save_tiff(ctrl6d_traj_umap_no_legend, "fig_7a.tiff", width = 10, height = 8)
+    save_tiff(rocki6d_traj_umap_no_legend, "fig_7b.tiff", width = 10, height = 8)
+    save_tiff(ctrl12d_traj_umap_no_legend, "fig_7c.tiff", width = 10, height = 8)
+    save_tiff(rocki12d_traj_umap_no_legend, "fig_7d.tiff", width = 10, height = 8)
+}
 ```
 
 ## Comparing trajectories
@@ -982,8 +1021,11 @@ traj_plot_12d <- create_traj_plot(traj_df_12d) + ggtitle("Comparison of 12D Traj
 (traj_plot_6d_no_legend <- traj_plot_6d + theme(legend.position = "none"))
 (traj_plot_12d_no_legend <- traj_plot_12d + theme(legend.position = "none"))
 
-# tiff("paper_figs/fig_7e.tiff", units="cm", width=10, height=8, res=300); traj_plot_6d_no_legend; dev.off()
-# tiff("paper_figs/fig_7f.tiff", units="cm", width=10, height=8, res=300); traj_plot_12d_no_legend; dev.off()
+if (save_images) {
+    save_tiff(traj_plot_6d_no_legend, "fig_7e.tiff", width = 10, height = 8)
+    save_tiff(traj_plot_12d_no_legend, "fig_7f.tiff", width = 10, height = 8)
+}
+
 
 create_speed_plot <- function(traj_df) {
     #basal_color <- "#80C9EA"
@@ -1009,8 +1051,14 @@ create_speed_plot <- function(traj_df) {
 (speed_plot_12d <- create_speed_plot(traj_df_12d) +
                   ggtitle("Comparison of Differentiation\nSpeeds at 12D"))
 
-# tiff("paper_figs/fig_s3a.tiff", units="cm", width=14, height=8, res=300); speed_plot_6d; dev.off()
-# tiff("paper_figs/fig_s3b.tiff", units="cm", width=14, height=8, res=300); speed_plot_12d; dev.off()
+(speed_plot_6d <- create_speed_plot(traj_df_6d) + theme(legend.position = "none"))
+(speed_plot_12d <- create_speed_plot(traj_df_12d) + theme(legend.position = "none"))
+
+if (save_images) {
+    save_tiff(speed_plot_6d, "fig_s3a.tiff", width = 14, height = 8)
+    save_tiff(speed_plot_12d, "fig_s3b.tiff", width = 14, height = 8)
+}
+
 
 for_dot_colour_legend <- ggplot(traj_df_6d,
                                 aes(x = pct, y = ptime, group = sample_class)) +
@@ -1032,7 +1080,9 @@ for_linetype_legend <- ggplot(traj_df_6d,
 linetype_legend <- as_ggplot(get_legend(for_linetype_legend, "right"))
 
 (legends <- ggarrange(linetype_legend, dot_colour_legend, ncol = 2))
-# tiff("paper_figs/fig_7_legends.tiff", units="cm", width=10, height=8, res=300); legends; dev.off()
+if (save_images) {
+    save_tiff(legends, "fig_7_legends.tiff", width = 10, height = 8)
+}
 ```
 
 ## Generating confidence intervals
