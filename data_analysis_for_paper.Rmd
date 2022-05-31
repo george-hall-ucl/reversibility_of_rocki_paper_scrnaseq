@@ -276,9 +276,7 @@ d12_cells <- subset(skin_data,
 d6_cells <- RunUMAP(d6_cells, dims = 1:50, reduction = "harmony")
 d12_cells <- RunUMAP(d12_cells, dims = 1:50, reduction = "harmony")
 
-umap_theme <- theme(panel.border = element_rect(color = "black", fill = NA,
-                                                size = 1),
-                    axis.line = element_blank(), axis.text.x = element_blank(),
+umap_theme <- theme(axis.line = element_blank(), axis.text.x = element_blank(),
                     axis.text.y=element_blank(), axis.ticks = element_blank(),
                     axis.title.x = element_blank(),
                     axis.title.y = element_blank(),
@@ -312,12 +310,7 @@ plot_treatment_class_umap <- function(cells) {
     p <- DimPlot(cells, group.by = "treatment_class",
                  cols = c(blue_color, red_color),
                  pt.size = -0.1) +
-         coord_fixed() + umap_lims + umap_theme + theme(legend.position = "none") +
-         annotation_custom(ggplotGrob(umap_d6_legend),
-                           xmin = umap_lims$limits$x[2] - 3,
-                           xmax = umap_lims$limits$x[2] - 2,
-                           ymin = umap_lims$limits$y[1] + 0.5,
-                           ymax = umap_lims$limits$y[1] + 1.5)
+         coord_fixed() + umap_theme + theme(legend.position = "none")
 
     return(p)
 }
@@ -523,7 +516,7 @@ create_cell_type_umap <- function(cells) {
                                "Mero- or Paraclone-forming",
                                "Differentiated", "Unclassified keratinocytes"),
                       values = c("#80C9EA", "#DD6E79", "#43863E", "#BBBBBB")) +
-    coord_fixed() + umap_lims + umap_theme + theme(legend.position = "none")
+    coord_fixed() + umap_theme + theme(legend.position = "none")
 
     return(p)
 }
@@ -831,10 +824,7 @@ ymax_sep <- max(reducedDim(ctrl6d_cells.sce, "UMAP")[,2],
                 reducedDim(ctrl12d_cells.sce, "UMAP")[,2],
                 reducedDim(rocki12d_cells.sce, "UMAP")[,2])
 
-sep_umap_lims <- coord_cartesian(xlim = c(xmin_sep, xmax_sep),
-                                 ylim = c(ymin_sep, ymax_sep))
-
-create_traj_umap <- function(sshot_to_plot, umap_curve, cell_types, umap_lims) {
+create_traj_umap <- function(sshot_to_plot, umap_curve, cell_types) {
     points_df <- data.frame(u1 = reducedDims(sshot_to_plot)$UMAP[,1],
                             u2 = reducedDims(sshot_to_plot)$UMAP[,2],
                             cell_types=cell_types)
@@ -887,7 +877,7 @@ create_traj_umap <- function(sshot_to_plot, umap_curve, cell_types, umap_lims) {
                    aes(x = u1, y = u2),
                    arrow = arrow(type = "closed", length = arrowhead_length),
                    size = arrow_width) +
-         coord_fixed() + umap_lims + umap_theme
+         coord_fixed() + umap_theme
 
      return(p)
 }
