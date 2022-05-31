@@ -512,14 +512,10 @@ rocki6d_cells <- subset(d6_cells, treatment_class == "ROCKi")
 ctrl12d_cells <- subset(d12_cells, treatment_class == "Control")
 rocki12d_cells <- subset(d12_cells, treatment_class == "ROCKi")
 
-(cell_type_umap_ctrl6d <- create_cell_type_umap(ctrl6d_cells) +
-                         ggtitle("Distribution of Cell Types\nfor Control Cells at 6D"))
-(cell_type_umap_rocki6d <- create_cell_type_umap(rocki6d_cells) +
-                         ggtitle("Distribution of Cell Types\nfor ROCKi-Treated Cells at 6D"))
-(cell_type_umap_ctrl12d <- create_cell_type_umap(ctrl12d_cells) +
-                         ggtitle("Distribution of Cell Types\nfor Control Cells at 12D"))
-(cell_type_umap_rocki12d <- create_cell_type_umap(rocki12d_cells) +
-                         ggtitle("Distribution of Cell Types\nfor ROCKi-Treated Cells at 12D"))
+cell_type_umap_ctrl6d <- create_cell_type_umap(ctrl6d_cells)
+cell_type_umap_rocki6d <- create_cell_type_umap(rocki6d_cells)
+cell_type_umap_ctrl12d <- create_cell_type_umap(ctrl12d_cells)
+cell_type_umap_rocki12d <- create_cell_type_umap(rocki12d_cells)
 
 if (save_images) {
     save_tiff(cell_type_umap_ctrl6d, "fig_6a.tiff")
