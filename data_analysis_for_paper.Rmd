@@ -529,7 +529,7 @@ cell_type_df_6d$Class <- factor(cell_type_df_6d$Class,
                                 levels = c("Control-6D", "ROCKi-6D",
                                            "Control-12D", "ROCKi-12D"))
 
-create_cell_type_proportion_graph <- function(df) {
+create_cell_type_proportion_graph <- function(df, names) {
     p <- ggplot(df, aes(x = Class, fill = CellType)) +
     geom_bar(position = "fill") + ylab("Proportion of cell type") +
     labs(fill = "Cell type") +
@@ -660,7 +660,7 @@ print(as.numeric(obs_total_prop_diff_12d - quantile(residuals_12d, alpha_vals)))
 signatures <- preprocess.signatures("celltype_markers_basal_ta_td.csv")
 
 create_dotplot <- function(cells) {
-    dp <- DotPlot(cells, group.by = "sample_class",
+    dp <- DotPlot(cells, group.by = "sample_class_space",
                   features = list("Holoclone" = signatures$Basal,
                                   "Mero-/Paraclone" = signatures$TA,
                                   "Differentiated" = signatures$TD)) +
