@@ -281,19 +281,7 @@ umap_theme <- theme(panel.border = element_rect(color = "black", fill = NA,
                     panel.grid.major = element_blank(),
                     panel.grid.minor = element_blank(),
                     panel.background = element_blank(),
-                    plot.title = element_text(size = text_size, face = "bold", hjust = 0.5))
-
-# Set axis limits to ensure that UMAP plots are the same size
-xmin <- quantile(c(d6_cells@reductions$umap@cell.embeddings[,1],
-                   d12_cells@reductions$umap@cell.embeddings[,1]), 0)
-xmax <- quantile(c(d6_cells@reductions$umap@cell.embeddings[,1],
-                   d12_cells@reductions$umap@cell.embeddings[,1]), 1)
-ymin <- quantile(c(d6_cells@reductions$umap@cell.embeddings[,2],
-                   d12_cells@reductions$umap@cell.embeddings[,2]), 0)
-ymax <- quantile(c(d6_cells@reductions$umap@cell.embeddings[,2],
-                   d12_cells@reductions$umap@cell.embeddings[,2]), 1)
-umap_lims <- coord_cartesian(xlim = c(xmin, xmax),  ylim = c(ymin, ymax))
-
+                    plot.title = element_blank())
 chart_margin_theme <- theme(plot.margin = margin(0, 1.2, 0, 1.2, "cm"))
 
 labels <- c("Control", "ROCKi-treated")
@@ -581,8 +569,7 @@ create_cell_type_proportion_graph <- function(df) {
     return(p)
 }
 
-cell_type_proportion_graph_6d <- create_cell_type_proportion_graph(cell_type_df_6d) +
-                                 ggtitle("Cell Type\nProportions at 6D")
+cell_type_proportion_graph_6d <- create_cell_type_proportion_graph(cell_type_df_6d, c("Control-6D ", "ROCKi-6D "))
 (cell_type_proportion_graph_6d_no_legend <- cell_type_proportion_graph_6d + theme(legend.position = "none"))
 
 if (save_images) {
@@ -595,8 +582,7 @@ cell_type_df_12d <- data.frame(CellType = d12_cells@meta.data$cell_type_pred,
 cell_type_df_12d$Class <- factor(cell_type_df_12d$Class,
                                  levels = c("Control-6D", "ROCKi-6D",
                                             "Control-12D", "ROCKi-12D"))
-cell_type_proportion_graph_12d <- create_cell_type_proportion_graph(cell_type_df_12d) +
-                                 ggtitle("Cell Type\nProportions at 12D")
+cell_type_proportion_graph_12d <- create_cell_type_proportion_graph(cell_type_df_12d, c("Control-6D 6D ", "ROCKi-6D 6D "))
 (cell_type_proportion_graph_12d_no_legend <- cell_type_proportion_graph_12d + theme(legend.position = "none"))
 if (save_images) {
     save_tiff(cell_type_proportion_graph_12d_no_legend, "fig_6f.tiff",
@@ -713,9 +699,9 @@ holo_cells <- subset(skin_data, subset = cell_type_pred == "Basal")
 ta_cells <- subset(skin_data, subset = cell_type_pred == "TA")
 td_cells <- subset(skin_data, subset = cell_type_pred == "TD")
 
-(holo_dp <- create_dotplot(holo_cells) + ggtitle("Holoclones"))
-(ta_dp <- create_dotplot(ta_cells) + ggtitle("Para- and meroclones"))
-(td_dp <- create_dotplot(td_cells) + ggtitle("Differentiated cells"))
+(holo_dp <- create_dotplot(holo_cells))
+(ta_dp <- create_dotplot(ta_cells))
+(td_dp <- create_dotplot(td_cells))
 
 if (save_images) {
     save_tiff(holo_dp, "fig_6g.tiff", width = 20, height = 8)
@@ -897,17 +883,13 @@ create_traj_umap <- function(sshot_to_plot, umap_curve, cell_types, umap_lims) {
 }
 
 ctrl6d_traj_umap <- create_traj_umap(sshot_ctrl6d_separate, umap_curve_ctrl6d,
-                                     Idents(ctrl6d_cells), sep_umap_lims) +
-                    ggtitle("Differentiation Trajectory of\n6D Control Cells")
+                                     Idents(ctrl6d_cells))
 rocki6d_traj_umap <- create_traj_umap(sshot_rocki6d_separate, umap_curve_rocki6d,
-                                      Idents(rocki6d_cells), sep_umap_lims) +
-                     ggtitle("Differentiation Trajectory of\n6D ROCKi-treated Cells")
+                                      Idents(rocki6d_cells))
 ctrl12d_traj_umap <- create_traj_umap(sshot_ctrl12d_separate, umap_curve_ctrl12d,
-                                      Idents(ctrl12d_cells), sep_umap_lims) +
-                     ggtitle("Differentiation Trajectory of\n12D Control Cells")
+                                      Idents(ctrl12d_cells))
 rocki12d_traj_umap <- create_traj_umap(sshot_rocki12d_separate, umap_curve_rocki12d,
-                                       Idents(rocki12d_cells), sep_umap_lims) +
-                      ggtitle("Differentiation Trajectory of\n12D ROCKi-treated Cells")
+                                       Idents(rocki12d_cells))
 
 (ctrl6d_traj_umap_no_legend <- ctrl6d_traj_umap + theme(legend.position = "none"))
 (rocki6d_traj_umap_no_legend <- rocki6d_traj_umap + theme(legend.position = "none"))
@@ -1015,8 +997,8 @@ create_traj_plot <- function(traj_df) {
     return(traj_plot)
 }
 
-traj_plot_6d <- create_traj_plot(traj_df_6d) + ggtitle("Comparison of 6D Trajectories")
-traj_plot_12d <- create_traj_plot(traj_df_12d) + ggtitle("Comparison of 12D Trajectories")
+traj_plot_6d <- create_traj_plot(traj_df_6d)
+traj_plot_12d <- create_traj_plot(traj_df_12d)
 
 (traj_plot_6d_no_legend <- traj_plot_6d + theme(legend.position = "none"))
 (traj_plot_12d_no_legend <- traj_plot_12d + theme(legend.position = "none"))
@@ -1046,10 +1028,6 @@ create_speed_plot <- function(traj_df) {
     return(speed_plot)
 }
 
-(speed_plot_6d <- create_speed_plot(traj_df_6d) +
-                 ggtitle("Comparison of Differentiation\nSpeeds at 6D"))
-(speed_plot_12d <- create_speed_plot(traj_df_12d) +
-                  ggtitle("Comparison of Differentiation\nSpeeds at 12D"))
 
 (speed_plot_6d <- create_speed_plot(traj_df_6d) + theme(legend.position = "none"))
 (speed_plot_12d <- create_speed_plot(traj_df_12d) + theme(legend.position = "none"))
