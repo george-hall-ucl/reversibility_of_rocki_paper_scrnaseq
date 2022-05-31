@@ -665,11 +665,12 @@ create_dotplot <- function(cells) {
                   features = list("Holoclone" = signatures$Basal,
                                   "Mero-/Paraclone" = signatures$TA,
                                   "Differentiated" = signatures$TD)) +
+                  axis_text_theme +
                   theme(axis.text.x = element_text(angle = 45, hjust = 1),
                         axis.text = element_text(size = 10),
                         axis.title = element_blank(),
-                        legend.title = element_text(size = 10),
-                        legend.text = element_text(size = 10))
+                        legend.title = element_text(size = 10, face = "bold"),
+                        legend.text = element_text(size = 10, face = "bold"))
 
     return(dp)
 }
@@ -974,7 +975,7 @@ create_traj_plot <- function(traj_df) {
                     ylim(c(0, max(traj_df$ptime))) +
                     xlab("Percentage through differentation process") +
                     ylab("Pseudotime") + traj_plot_margin_theme +
-                    diff_comparison_plots_theme
+                    diff_comparison_plots_theme + axis_text_theme
 
     return(traj_plot)
 }
@@ -1036,7 +1037,8 @@ for_linetype_legend <- ggplot(traj_df_6d,
                           geom_line(aes(linetype = sample_class), size = 0.4) +
                           scale_linetype_manual(values = c("solid", "dashed"),
                                                 labels = c("Control", "ROCKi-treated")) +
-                          theme(legend.title = element_blank())
+                          theme(legend.title = element_blank(),
+                                legend.text = element_text(face = "bold"))
 linetype_legend <- as_ggplot(get_legend(for_linetype_legend, "right"))
 
 (legends <- ggarrange(linetype_legend, dot_colour_legend, ncol = 2))
