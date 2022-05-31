@@ -82,13 +82,13 @@ skin_data <- CreateSeuratObject(counts = skin_data,
                                 project = "3DonorEffectOfRocki",
                                 min.cells = 3, min.features = 200,
                                 names.delim = "-", names.field = 2)
-skin_data <- RenameIdents(object = skin_data, "1" = "1Control-6D",
-                          "2" = "1ROCKi-6D", "3" = "1Control-12D",
-                          "4" = "1ROCKi-12D", "5" = "2Control-6D",
-                          "6" = "2ROCKi-6D", "7" = "2Control-12D",
-                          "8" = "2ROCKi-12D", "9" = "3Control-6D",
-                          "10" = "3ROCKi-6D", "11" = "3Control-12D",
-                          "12" = "3ROCKi-12D")
+skin_data <- RenameIdents(object = skin_data, "1" = "1Control-6D ",
+                          "2" = "1ROCKi-6D ", "3" = "1Control-6D 6D ",
+                          "4" = "1ROCKi-6D 6D ", "5" = "2Control-6D ",
+                          "6" = "2ROCKi-6D ", "7" = "2Control-6D 6D ",
+                          "8" = "2ROCKi-6D 6D ", "9" = "3Control-6D ",
+                          "10" = "3ROCKi-6D ", "11" = "3Control-6D 6D ",
+                          "12" = "3ROCKi-6D 6D ")
 ```
 
 ## Filter low quality cells
@@ -252,6 +252,10 @@ sample_class <- sapply(skin_data@meta.data$orig.ident,
                                    else if (x %in% c("3","7","11")) {"Control-12D"}
                                    else {"ROCKi-12D"})
 skin_data@meta.data$sample_class <- sample_class
+skin_data@meta.data$sample_class <- factor(skin_data@meta.data$sample_class,
+                                           levels = c("Control-6D", "ROCKi-6D",
+                                                      "Control-12D",
+                                                      "ROCKi-12D"))
 
 treatment_class <- sapply(skin_data@meta.data$sample_class,
                        function(x) if (x %in% c("Control-6D","Control-12D")) {"Control"}
@@ -339,13 +343,13 @@ using DAseq.
 
 ```{r}
 daseq_out_6d <- getDAcells(d6_cells@reductions$harmony@cell.embeddings,
-                           cell.labels = d6_cells@meta.data$sample_class,
+                           cell.labels = as.character(d6_cells@meta.data$sample_class),
                            labels.1 = c("Control-6D"),
                            labels.2 = c("ROCKi-6D"),
                            plot.embedding = d6_cells@reductions$umap@cell.embeddings)
 
 daseq_out_12d <- getDAcells(d12_cells@reductions$harmony@cell.embeddings,
-                            cell.labels = d12_cells@meta.data$sample_class,
+                            cell.labels = as.character(d12_cells@meta.data$sample_class),
                             labels.1 = c("Control-12D"),
                             labels.2 = c("ROCKi-12D"),
                             plot.embedding = d12_cells@reductions$umap@cell.embeddings)
@@ -694,6 +698,12 @@ create_dotplot <- function(cells) {
 
     return(dp)
 }
+
+skin_data@meta.data$sample_class_space <- skin_data@meta.data$sample_class
+levels(skin_data@meta.data$sample_class_space) <- c("Control-6D ",
+                                                    "ROCKi-6D ",
+                                                    "Control-6D 6D ",
+                                                    "ROCKi-6D 6D ")
 
 holo_cells <- subset(skin_data, subset = cell_type_pred == "Basal")
 ta_cells <- subset(skin_data, subset = cell_type_pred == "TA")
