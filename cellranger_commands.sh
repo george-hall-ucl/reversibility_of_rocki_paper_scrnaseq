@@ -1,3 +1,7 @@
+# (C) University College London 2020-2022. This software is licenced under the
+# terms of the GNU GENERAL PUBLIC LICENSE Version 3. See COPYING.txt for the
+# licence details.
+
 # We used cellranger v5.0.1
 # "SEQ_ID" and "RUN_ID" are used as placeholders for the sake of neatness.
 

@@ -1,3 +1,7 @@
+# (C) University College London 2020-2022. This software is licenced under the
+# terms of the GNU GENERAL PUBLIC LICENSE Version 3. See COPYING.txt for the
+# licence details.
+
 library(foreach)
 library(doParallel)
 
