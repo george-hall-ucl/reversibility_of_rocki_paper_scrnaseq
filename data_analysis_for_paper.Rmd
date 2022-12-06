@@ -158,7 +158,7 @@ pct_mito_df <- data.frame(x = levels(Idents(skin_data)),
                         upper = c(rep(10, 8), rep(12, 4)))
 
 (pct_mito_vln <- vlnplot_limits(skin_data, "percent.mt",
-                               paste0("Percentage of mitochrondrial\n"
+                               paste0("Percentage of mitochrondrial\n",
                                       "DNA detected per cell"),
                                pct_mito_df) + ylim(c(0, 20)))
 if (save_images) {
@@ -166,7 +166,7 @@ if (save_images) {
 }
 
 pass_qc <- c()
-for (j in 1:length(skin_data$orig.ident)) {
+for (j in seq_len(length(skin_data$orig.ident))) {
     i <- as.integer(as.character(skin_data$orig.ident[j]))
     pass_qc <- c(pass_qc, all(skin_data$nFeature_RNA[j] >= nfeature_df$lower[i],
                               skin_data$nFeature_RNA[j] <= nfeature_df$upper[i],
@@ -314,8 +314,8 @@ umap_theme <- theme(axis.line = element_blank(), axis.text.x = element_blank(),
 chart_margin_theme <- theme(plot.margin = margin(0, 1.2, 0, 1.2, "cm"))
 
 labels <- c("Control", "ROCKi-treated")
-legend_plot <- ggplot(data.frame(class = as.character(1:length(labels)),
-                                 x = 1:length(labels)),
+legend_plot <- ggplot(data.frame(class = as.character(seq_len(length(labels))),
+                                 x = seq_len(length(labels))),
                       aes(x = x, y = x, col = class)) +
                geom_point() +
                scale_color_manual(labels = labels,
@@ -362,17 +362,20 @@ using DAseq.
 ## Differential abundance testing using DAseq
 
 ```{r}
-daseq_out_6d <- getDAcells(d6_cells@reductions$harmony@cell.embeddings,
+daseq_out_6d <- getDAcells(Embeddings(object = d6_cells, reduction = "harmony"),
                            cell.labels = as.character(d6_cells$sample_class),
                            labels.1 = c("Control-6D"),
                            labels.2 = c("ROCKi-6D"),
-                           plot.embedding = d6_cells@reductions$umap@cell.embeddings)
+                           plot.embedding = Embeddings(object = d6_cells,
+                                                       reduction = "umap"))
 
-daseq_out_12d <- getDAcells(d12_cells@reductions$harmony@cell.embeddings,
+daseq_out_12d <- getDAcells(Embeddings(object = d12_cells,
+                                       reduction = "harmony"),
                             cell.labels = as.character(d12_cells$sample_class),
                             labels.1 = c("Control-12D"),
                             labels.2 = c("ROCKi-12D"),
-                            plot.embedding = d12_cells@reductions$umap@cell.embeddings)
+                            plot.embedding = Embeddings(object = d12_cells,
+                                                        reduction = "umap"))
 
 daseq_legend <- as_ggplot(get_legend(daseq_out_12d$pred.plot +
                                      umap_theme +
@@ -478,8 +481,8 @@ labels <- c(bquote(bold(Log["2"]~"fold change ≤ -1")),
             bquote(bold("|"*Log["2"]~"fold change| < 1")),
             bquote(bold(Log["2"]~"fold change ≥ 1")))
 
-vol_6d_legend <- ggplot(data.frame(class = as.character(1:length(labels)),
-                                   x = 1:length(labels)),
+vol_6d_legend <- ggplot(data.frame(class = as.character(seq_len(length(labels))),
+                                   x = seq_len(length(labels))),
                         aes(x = x, y = x, color = class, fill = class)) +
                  geom_point(size = 3, shape = 21, alpha = 0.5) +
                  scale_fill_manual(values = c("white", not_sig_color, "red"),
@@ -896,7 +899,7 @@ create_traj_umap <- function(sshot_to_plot, umap_curve, cell_types) {
                            "Differentiated", "Unknown"),
                            values = c("#80C9EA", "#DD6E79",
                                       "#43863E", "#BBBBBB")) +
-         geom_path(data = curve_df[1:end_idx, ],
+         geom_path(data = curve_df[seq_len(end_idx), ],
                    aes(x = u1, y = u2),
                    arrow = arrow(type = "closed", length = arrowhead_length),
                    size = arrow_width) +
@@ -904,11 +907,11 @@ create_traj_umap <- function(sshot_to_plot, umap_curve, cell_types) {
                    aes(x = u1, y = u2),
                    arrow = arrow(type = "open", length = arrowhead_length),
                    size = arrow_width) +
-         geom_path(data = curve_df[1:basal_pct_overall_idx, ],
+         geom_path(data = curve_df[seq_len(basal_pct_overall_idx), ],
                    aes(x = u1, y = u2),
                    arrow = arrow(type = "closed", length = arrowhead_length),
                    size = arrow_width) +
-         geom_path(data = curve_df[1:ta_pct_overall_idx, ],
+         geom_path(data = curve_df[seq_len(ta_pct_overall_idx), ],
                    aes(x = u1, y = u2),
                    arrow = arrow(type = "closed", length = arrowhead_length),
                    size = arrow_width) +
