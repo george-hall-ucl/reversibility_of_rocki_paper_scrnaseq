@@ -110,7 +110,7 @@ inter-sample variation.
 skin_data[["percent.mt"]] <- PercentageFeatureSet(skin_data, pattern = "^MT-")
 
 VlnPlot_limits <- function(data, metric, ylab, limits) {
-    df <- data.frame(x=Idents(data), y = data@meta.data[,metric])
+    df <- data.frame(x=Idents(data), y = data$metric)
     plot <- ggplot() + geom_violin(data = df, aes(x=x, y=y, fill=x)) +
             geom_errorbar(data = limits, aes(x = x, ymin = lower, ymax = upper),
                           color = "red") +
@@ -165,14 +165,14 @@ if(save_images) {
 }
 
 pass_qc <- c()
-for (j in 1:length(skin_data@meta.data$orig.ident)) {
-    i <- as.integer(as.character(skin_data@meta.data$orig.ident[j]))
-    pass_qc <- c(pass_qc, all(skin_data@meta.data$nFeature_RNA[j] >= nfeature_df$lower[i],
-                              skin_data@meta.data$nFeature_RNA[j] <= nfeature_df$upper[i],
-                              skin_data@meta.data$nCount_RNA[j] >= ncount_df$lower[i],
-                              skin_data@meta.data$nCount_RNA[j] <= ncount_df$upper[i],
-                              skin_data@meta.data$percent.mt[j] >= pct_mito_df$lower[i],
-                              skin_data@meta.data$percent.mt[j] <= pct_mito_df$upper[i]))
+for (j in 1:length(skin_data$orig.ident)) {
+    i <- as.integer(as.character(skin_data$orig.ident[j]))
+    pass_qc <- c(pass_qc, all(skin_data$nFeature_RNA[j] >= nfeature_df$lower[i],
+                              skin_data$nFeature_RNA[j] <= nfeature_df$upper[i],
+                              skin_data$nCount_RNA[j] >= ncount_df$lower[i],
+                              skin_data$nCount_RNA[j] <= ncount_df$upper[i],
+                              skin_data$percent.mt[j] >= pct_mito_df$lower[i],
+                              skin_data$percent.mt[j] <= pct_mito_df$upper[i]))
 }
 skin_data <- skin_data[, pass_qc]
 ```
@@ -222,7 +222,7 @@ s.genes <- cc.genes$s.genes
 g2m.genes <- cc.genes$g2m.genes
 skin_data <- CellCycleScoring(skin_data, s.features = s.genes,
                               g2m.features = g2m.genes)
-skin_data@meta.data$CC.difference <- skin_data@meta.data$S.Score - skin_data@meta.data$G2M.Score
+skin_data$CC.difference <- skin_data$S.Score - skin_data$G2M.Score
 skin_data <- SCTransform(skin_data, vars.to.regress = c("CC.difference"))
 skin_data.cell_cycle_regressed <- skin_data
 ```
@@ -245,30 +245,30 @@ if(save_images) {
 }
 
 # Remove inter-donor differences using Harmony
-donor_idents <- sapply(skin_data@meta.data$orig.ident,
+donor_idents <- sapply(skin_data$orig.ident,
                        function(x) if (x %in% c("1","2","3","4")) {"1"}
                                    else if (x %in% c("5","6","7","8")) {"2"}
                                    else {"3"})
-skin_data@meta.data["donor_idents"] <- donor_idents
+skin_data$donor_idents <- donor_idents
 
 skin_data <- skin_data %>% RunHarmony("donor_idents", assay.use = "SCT")
 skin_data.harmonised <- skin_data
 
-sample_class <- sapply(skin_data@meta.data$orig.ident,
+sample_class <- sapply(skin_data$orig.ident,
                        function(x) if (x %in% c("1","5","9")) {"Control-6D"}
                                    else if (x %in% c("2","6","10")) {"ROCKi-6D"}
                                    else if (x %in% c("3","7","11")) {"Control-12D"}
                                    else {"ROCKi-12D"})
-skin_data@meta.data$sample_class <- sample_class
-skin_data@meta.data$sample_class <- factor(skin_data@meta.data$sample_class,
+skin_data$sample_class <- sample_class
+skin_data$sample_class <- factor(skin_data$sample_class,
                                            levels = c("Control-6D", "ROCKi-6D",
                                                       "Control-12D",
                                                       "ROCKi-12D"))
 
-treatment_class <- sapply(skin_data@meta.data$sample_class,
+treatment_class <- sapply(skin_data$sample_class,
                        function(x) if (x %in% c("Control-6D","Control-12D")) {"Control"}
                                    else {"ROCKi"})
-skin_data@meta.data$treatment_class <- treatment_class
+skin_data$treatment_class <- treatment_class
 ```
 
 ## Run UMAP
@@ -344,13 +344,13 @@ using DAseq.
 
 ```{r}
 daseq_out_6d <- getDAcells(d6_cells@reductions$harmony@cell.embeddings,
-                           cell.labels = as.character(d6_cells@meta.data$sample_class),
+                           cell.labels = as.character(d6_cells$sample_class),
                            labels.1 = c("Control-6D"),
                            labels.2 = c("ROCKi-6D"),
                            plot.embedding = d6_cells@reductions$umap@cell.embeddings)
 
 daseq_out_12d <- getDAcells(d12_cells@reductions$harmony@cell.embeddings,
-                            cell.labels = as.character(d12_cells@meta.data$sample_class),
+                            cell.labels = as.character(d12_cells$sample_class),
                             labels.1 = c("Control-12D"),
                             labels.2 = c("ROCKi-12D"),
                             plot.embedding = d12_cells@reductions$umap@cell.embeddings)
@@ -398,7 +398,7 @@ We carried out differential expression analysis of treated and control cells at
 6D and 12D using the standard Wilcoxon rank sum test in Seurat. 
 
 ```{r out.width = "100%"}
-Idents(skin_data) <- skin_data@meta.data$sample_class
+Idents(skin_data) <- skin_data$sample_class
 marks_6d <- FindMarkers(skin_data, ident.1 = "ROCKi-6D",
                         ident.2 = "Control-6D")
 marks_12d <- FindMarkers(skin_data, ident.1 = "ROCKi-12D",
@@ -487,22 +487,22 @@ distinct markers.
 ```{r results = 'hold'}
 (signatures <- preprocess.signatures("celltype_markers_basal_ta_td.csv"))
 
-skin_data@meta.data$cell_type_pred <- SCINA(as.matrix(GetAssayData(skin_data)),
+skin_data$cell_type_pred <- SCINA(as.matrix(GetAssayData(skin_data)),
                                             signatures)$cell_labels
-d6_cells@meta.data$cell_type_pred <- SCINA(as.matrix(GetAssayData(d6_cells)),
+d6_cells$cell_type_pred <- SCINA(as.matrix(GetAssayData(d6_cells)),
                                            signatures)$cell_labels
-d12_cells@meta.data$cell_type_pred <- SCINA(as.matrix(GetAssayData(d12_cells)),
+d12_cells$cell_type_pred <- SCINA(as.matrix(GetAssayData(d12_cells)),
                                             signatures)$cell_labels
 
-d6_cells@meta.data$cell_type_pred <- factor(d6_cells@meta.data$cell_type_pred,
+d6_cells$cell_type_pred <- factor(d6_cells$cell_type_pred,
                                              levels = c("Basal", "TA", "TD", "unknown"))
-d12_cells@meta.data$cell_type_pred <- factor(d12_cells@meta.data$cell_type_pred,
+d12_cells$cell_type_pred <- factor(d12_cells$cell_type_pred,
                                              levels = c("Basal", "TA", "TD", "unknown"))
 
 create_cell_type_umap <- function(cells) {
     # Force factors back into correct order as this inexplicably disappears
     # when passed to a function
-    cells@meta.data$cell_type_pred <- factor(cells@meta.data$cell_type_pred,
+    cells$cell_type_pred <- factor(cells$cell_type_pred,
                                              levels = c("Basal", "TA", "TD", "unknown"))
     p <- DimPlot(cells, group.by = "cell_type_pred") +
     scale_color_manual(labels=c("Holoclone-forming",
@@ -531,8 +531,8 @@ if (save_images) {
     save_tiff(cell_type_umap_rocki12d, "fig_6d.tiff")
 }
 
-cell_type_df_6d <- data.frame(CellType = d6_cells@meta.data$cell_type_pred,
-                           Class = d6_cells@meta.data$sample_class)
+cell_type_df_6d <- data.frame(CellType = d6_cells$cell_type_pred,
+                           Class = d6_cells$sample_class)
 cell_type_df_6d$Class <- factor(cell_type_df_6d$Class,
                                 levels = c("Control-6D", "ROCKi-6D",
                                            "Control-12D", "ROCKi-12D"))
@@ -563,8 +563,8 @@ if (save_images) {
               width = 6, height = 6)
 }
 
-cell_type_df_12d <- data.frame(CellType = d12_cells@meta.data$cell_type_pred,
-                           Class = d12_cells@meta.data$sample_class)
+cell_type_df_12d <- data.frame(CellType = d12_cells$cell_type_pred,
+                           Class = d12_cells$sample_class)
 cell_type_df_12d$Class <- factor(cell_type_df_12d$Class,
                                  levels = c("Control-6D", "ROCKi-6D",
                                             "Control-12D", "ROCKi-12D"))
@@ -612,38 +612,38 @@ calc_cell_type_props <- function(cell_types, treatment_classes) {
 # Set random seed for reproducibility
 set.seed(1234)
 
-obs_total_prop_diff_6d <- calc_cell_type_props(d6_cells@meta.data$cell_type_pred,
-                                               d6_cells@meta.data$treatment_class)
-obs_total_prop_diff_12d <- calc_cell_type_props(d12_cells@meta.data$cell_type_pred,
-                                                d12_cells@meta.data$treatment_class)
+obs_total_prop_diff_6d <- calc_cell_type_props(d6_cells$cell_type_pred,
+                                               d6_cells$treatment_class)
+obs_total_prop_diff_12d <- calc_cell_type_props(d12_cells$cell_type_pred,
+                                                d12_cells$treatment_class)
 
 prop_diffs_6d <- c() # Store results
 prop_diffs_12d <- c() # Store results
 
 for (r in 1:10000) {
     # Generate resample indices
-    c6d_idx <- sample(which(d6_cells@meta.data$treatment_class == "Control"),
-                      length(which(d6_cells@meta.data$treatment_class == "Control")),
+    c6d_idx <- sample(which(d6_cells$treatment_class == "Control"),
+                      length(which(d6_cells$treatment_class == "Control")),
                       replace = TRUE)
-    r6d_idx <- sample(which(d6_cells@meta.data$treatment_class == "ROCKi"),
-                      length(which(d6_cells@meta.data$treatment_class == "ROCKi"))-1,
+    r6d_idx <- sample(which(d6_cells$treatment_class == "ROCKi"),
+                      length(which(d6_cells$treatment_class == "ROCKi"))-1,
                       replace = TRUE)
     d6_idx <- c(c6d_idx, r6d_idx)
 
-    c12d_idx <- sample(which(d12_cells@meta.data$treatment_class == "Control"),
-                      length(which(d12_cells@meta.data$treatment_class == "Control")),
+    c12d_idx <- sample(which(d12_cells$treatment_class == "Control"),
+                      length(which(d12_cells$treatment_class == "Control")),
                       replace = TRUE)
-    r12d_idx <- sample(which(d12_cells@meta.data$treatment_class == "ROCKi"),
-                      length(which(d12_cells@meta.data$treatment_class == "ROCKi"))-1,
+    r12d_idx <- sample(which(d12_cells$treatment_class == "ROCKi"),
+                      length(which(d12_cells$treatment_class == "ROCKi"))-1,
                       replace = TRUE)
     d12_idx <- c(c12d_idx, r12d_idx)
 
     # Find cell type and treatment class labels for this resample
-    d6_cell_type <- d6_cells@meta.data$cell_type_pred[d6_idx]
-    d6_treat_class <- d6_cells@meta.data$treatment_class[d6_idx]
+    d6_cell_type <- d6_cells$cell_type_pred[d6_idx]
+    d6_treat_class <- d6_cells$treatment_class[d6_idx]
 
-    d12_cell_type <- d12_cells@meta.data$cell_type_pred[d12_idx]
-    d12_treat_class <- d12_cells@meta.data$treatment_class[d12_idx]
+    d12_cell_type <- d12_cells$cell_type_pred[d12_idx]
+    d12_treat_class <- d12_cells$treatment_class[d12_idx]
 
     total_prop_diff <- calc_cell_type_props(d6_cell_type, d6_treat_class)
     prop_diffs_6d <- c(prop_diffs_6d, total_prop_diff)
@@ -682,8 +682,8 @@ create_dotplot <- function(cells) {
     return(dp)
 }
 
-skin_data@meta.data$sample_class_space <- skin_data@meta.data$sample_class
-levels(skin_data@meta.data$sample_class_space) <- c("Control-6D ",
+skin_data$sample_class_space <- skin_data$sample_class
+levels(skin_data$sample_class_space) <- c("Control-6D ",
                                                     "ROCKi-6D ",
                                                     "Control-6D 6D ",
                                                     "ROCKi-6D 6D ")
@@ -730,7 +730,7 @@ rocki12d_cells <- RunUMAP(rocki12d_cells, dims = 1:50, reduction = "harmony")
 prepare_cells_for_slingshot <- function(cells) {
     cells <- FindNeighbors(cells, reduction = "harmony", dims = 1:50)
     cells <- FindClusters(cells, resolution = 0.1)
-    if (cells@meta.data$sample_class == "Control-6D") {
+    if (cells$sample_class == "Control-6D") {
     cells <- RenameIdents(object = cells, "0" = "TA", "1" = "Basal", "2" = "TD")
     } else {
     cells <- RenameIdents(object = cells, "0" = "TA", "1" = "TD", "2" = "Basal")
@@ -792,10 +792,10 @@ umap_curve_rocki6d <- slingCurves(sshot_rocki6d_separate)[[1]]
 umap_curve_ctrl12d <- slingCurves(sshot_ctrl12d_separate)[[1]]
 umap_curve_rocki12d <- slingCurves(sshot_rocki12d_separate)[[1]]
 
-ctrl6d_idx <- which(d6_cells@meta.data$treatment_class == "Control")
-rocki6d_idx <- which(d6_cells@meta.data$treatment_class == "ROCKi")
-ctrl12d_idx <- which(d12_cells@meta.data$treatment_class == "Control")
-rocki12d_idx <- which(d12_cells@meta.data$treatment_class == "ROCKi")
+ctrl6d_idx <- which(d6_cells$treatment_class == "Control")
+rocki6d_idx <- which(d6_cells$treatment_class == "ROCKi")
+ctrl12d_idx <- which(d12_cells$treatment_class == "Control")
+rocki12d_idx <- which(d12_cells$treatment_class == "ROCKi")
 
 sshot_ctrl6d_together <- sshot_6d[,ctrl6d_idx]
 sshot_rocki6d_together <- sshot_6d[,rocki6d_idx]
@@ -910,8 +910,8 @@ take cell type of a cell to be the cluster to which it belongs to improve the
 appearance of the trajectory plots when colouring by cell type.
 
 ```{r out.width = "100%"}
-d6_cells@meta.data$cell_type <- Idents(d6_cells)
-d12_cells@meta.data$cell_type <- Idents(d12_cells)
+d6_cells$cell_type <- Idents(d6_cells)
+d12_cells$cell_type <- Idents(d12_cells)
 
 # mov_avg function copied from stackoverflow.com/a/4862334/6914552
 mov_avg <- function(x, n = 151){stats::filter(x, rep(1 / n, n), sides = 2)}
@@ -933,17 +933,17 @@ create_traj_df <- function (ptimes, name, cell_types) {
 }
 
 traj_df_ctrl6d <- create_traj_df(sshot_ctrl6d_together$slingPseudotime_1, "Control-6D",
-                                 d6_cells[,ctrl6d_idx]@meta.data$cell_type)
+                                 d6_cells[,ctrl6d_idx]$cell_type)
 traj_df_rocki6d <- create_traj_df(sshot_rocki6d_together$slingPseudotime_1, "ROCKi-6D",
-                                  d6_cells[,rocki6d_idx]@meta.data$cell_type)
+                                  d6_cells[,rocki6d_idx]$cell_type)
 traj_df_6d <- rbind(traj_df_ctrl6d, traj_df_rocki6d)
 
 traj_df_ctrl12d <- create_traj_df(sshot_ctrl12d_together$slingPseudotime_1,
                                   "Control-12D",
-                                  d12_cells[,ctrl12d_idx]@meta.data$cell_type)
+                                  d12_cells[,ctrl12d_idx]$cell_type)
 traj_df_rocki12d <- create_traj_df(sshot_rocki12d_together$slingPseudotime_1,
                                    "ROCKi-12D",
-                                   d12_cells[,rocki12d_idx]@meta.data$cell_type)
+                                   d12_cells[,rocki12d_idx]$cell_type)
 traj_df_12d <- rbind(traj_df_ctrl12d, traj_df_rocki12d)
 
 obs_result_ptime_6d <- mean(abs(traj_df_ctrl6d$ptime - traj_df_rocki6d$ptime))
@@ -1099,12 +1099,12 @@ print(paste("95% confidence interval for difference in speed at 12D:",
 skin_data.with_outliers <- skin_data.with_outliers %>% SCTransform() %>%
                            CellCycleScoring(s.features = s.genes,
                                             g2m.features = g2m.genes)
-skin_data.with_outliers@meta.data$CC.difference <- skin_data.with_outliers@meta.data$S.Score - skin_data.with_outliers@meta.data$G2M.Score
+skin_data.with_outliers$CC.difference <- skin_data.with_outliers$S.Score - skin_data.with_outliers$G2M.Score
 skin_data.with_outliers <- skin_data.with_outliers %>%
                            SCTransform(vars.to.regress = c("CC.difference")) %>%
                            RunPCA(features = skin_data.with_outliers@assays$SCT@var.features,
                                   npcs = 50)
-skin_data.with_outliers@meta.data$donor_idents <- sapply(skin_data.with_outliers@meta.data$orig.ident,
+skin_data.with_outliers$donor_idents <- sapply(skin_data.with_outliers$orig.ident,
                                                          function(x) if (x %in% c("1","2","3","4")) {"1"}
                                                          else if (x %in% c("5","6","7","8")) {"2"}
                                                          else {"3"})
