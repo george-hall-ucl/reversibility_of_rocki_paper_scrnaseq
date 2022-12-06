@@ -158,7 +158,8 @@ pct_mito_df <- data.frame(x = levels(Idents(skin_data)),
                         upper = c(rep(10, 8), rep(12, 4)))
 
 (pct_mito_vln <- vlnplot_limits(skin_data, "percent.mt",
-                               "Percentage of mitochrondrial\nDNA detected per cell",
+                               paste0("Percentage of mitochrondrial\n"
+                                      "DNA detected per cell"),
                                pct_mito_df) + ylim(c(0, 20)))
 if (save_images) {
     save_tiff(pct_mito_vln, "fig_s4c.tiff")
@@ -313,21 +314,21 @@ umap_theme <- theme(axis.line = element_blank(), axis.text.x = element_blank(),
 chart_margin_theme <- theme(plot.margin = margin(0, 1.2, 0, 1.2, "cm"))
 
 labels <- c("Control", "ROCKi-treated")
-umap_legend_plot <- ggplot(data.frame(class = as.character(1:length(labels)),
-                                      x = 1:length(labels)),
-                           aes(x = x, y = x, col = class)) +
-                    geom_point() +
-                    scale_color_manual(labels = labels,
-                                       values = c(blue_color, red_color)) +
-                    theme(legend.title = element_blank(),
-                          legend.key = element_rect(fill = NA, color = NA),
-                          legend.margin = margin(c(0, 0, 0, 0)),
-                          legend.text = element_text(face = "bold"),
-                          legend.background = element_rect(fill = "#00000000",
-                                                           size = 0.5,
-                                                           linetype = "solid")) +
-                    guides(colour = guide_legend(override.aes = list(size = 2)))
-umap_legend <- as_ggplot(get_legend(umap_legend_plot, "left"))
+legend_plot <- ggplot(data.frame(class = as.character(1:length(labels)),
+                                 x = 1:length(labels)),
+                      aes(x = x, y = x, col = class)) +
+               geom_point() +
+               scale_color_manual(labels = labels,
+                                  values = c(blue_color, red_color)) +
+               theme(legend.title = element_blank(),
+                     legend.key = element_rect(fill = NA, color = NA),
+                     legend.margin = margin(c(0, 0, 0, 0)),
+                     legend.text = element_text(face = "bold"),
+                     legend.background = element_rect(fill = "#00000000",
+                                                      size = 0.5,
+                                                      linetype = "solid")) +
+               guides(colour = guide_legend(override.aes = list(size = 2)))
+umap_legend <- as_ggplot(get_legend(legend_plot, "left"))
 if (save_images) {
     save_tiff(umap_legend, "umap_legend.tiff")
 }
@@ -383,7 +384,8 @@ if (save_images) {
 }
 
 create_daseq_umap <- function(daseq_out) {
-    daseq_umap <- daseq_out$pred.plot + umap_theme + theme(legend.position = "none")
+    daseq_umap <- daseq_out$pred.plot + umap_theme +
+                  theme(legend.position = "none")
 
     return(daseq_umap)
 }
@@ -398,8 +400,10 @@ if (save_images) {
     save_tiff(daseq_umap_12d, "fig_5d.tiff")
 }
 
-proportion_da_6d <- length(c(daseq_out_6d$da.down, daseq_out_6d$da.up)) / length(colnames(d6_cells))
-proportion_da_12d <- length(c(daseq_out_12d$da.down, daseq_out_12d$da.up)) / length(colnames(d12_cells))
+num_da_cells_6d <- length(c(daseq_out_6d$da.down, daseq_out_6d$da.up))
+proportion_da_6d <- num_da_cells_6d / length(colnames(d6_cells))
+num_da_cells_12d <- length(c(daseq_out_12d$da.down, daseq_out_12d$da.up))
+proportion_da_12d <- num_da_cells_12d / length(colnames(d12_cells))
 ```
 
 ```{r results = 'markup'}
@@ -431,19 +435,24 @@ vol_plot <- function(marks) {
     sig_marks_neg <- subset(marks, avg_log2FC < -1)
 
     # Assign classes to genes based on how DE they are. Used to set colours
-    de_class <- ifelse(marks$avg_log2FC < -1 & marks$p_val_adj < 0.01, "Downreg",
-                  ifelse(marks$avg_log2FC > 1 & marks$p_val_adj < 0.01, "Upreg",
-                         ifelse(marks$p_val_adj < 0.01, "Low-LFC", "Not-Sig")))
-    de_class <- factor(de_class, levels = c("Not-Sig", "Low-LFC",
-                                            "Downreg", "Upreg"))
+    de_class <- ifelse(marks$avg_log2FC < -1 & marks$p_val_adj < 0.01,
+                       "Downreg",
+                       ifelse(marks$avg_log2FC > 1 & marks$p_val_adj < 0.01,
+                              "Upreg",
+                              ifelse(marks$p_val_adj < 0.01,
+                                     "Low-LFC", "Not-Sig")))
+    de_class <- factor(de_class, levels = c("Not-Sig", "Low-LFC", "Downreg",
+                                            "Upreg"))
 
     x_sublabel_y <- -50 # Position the sub-labels of the x-axis correctly
     plot <- ggplot(marks, aes(x = avg_log2FC, y = p_val_adj_neg_log,
                               label = rownames(marks))) +
             geom_point(aes(color = de_class, fill = de_class), size = 2,
                        shape = 21, alpha = 0.5) +
-            scale_color_manual(values = c("gray", not_sig_color, "red", "white")) +
-            scale_fill_manual(values = c("gray", not_sig_color, "white", "red")) +
+            scale_color_manual(values = c("gray", not_sig_color, "red",
+                                          "white")) +
+            scale_fill_manual(values = c("gray", not_sig_color, "white",
+                                         "red")) +
             geom_vline(xintercept = -1, linetype = "dashed", alpha = 0.5) +
             geom_vline(xintercept = 1, linetype = "dashed", alpha = 0.5) +
             xlim(-2.5, 2.5) + ylim(-log10(0.01), 350) +
@@ -469,19 +478,19 @@ labels <- c(bquote(bold(Log["2"]~"fold change ≤ -1")),
             bquote(bold("|"*Log["2"]~"fold change| < 1")),
             bquote(bold(Log["2"]~"fold change ≥ 1")))
 
-vol_6d_legend_plot <- ggplot(data.frame(class = as.character(1:length(labels)),
-                                        x = 1:length(labels)),
-                             aes(x = x, y = x, color = class, fill = class)) +
-                      geom_point(size = 3, shape = 21, alpha = 0.5) +
-                      scale_fill_manual(values = c("white", not_sig_color, "red"),
-                                        labels = labels) +
-                      scale_color_manual(values = c("red", not_sig_color, "white"),
-                                         labels = labels) +
-                      theme(legend.title = element_blank(),
-                            legend.key = element_rect(fill = NA, color = NA),
-                            legend.text = element_text(face = "bold"),
-                            legend.margin = margin(unit(c(0, 0, 0, 0), "cm"))) +
-                      guides(colour = guide_legend(override.aes = list(size = 2)))
+vol_6d_legend <- ggplot(data.frame(class = as.character(1:length(labels)),
+                                   x = 1:length(labels)),
+                        aes(x = x, y = x, color = class, fill = class)) +
+                 geom_point(size = 3, shape = 21, alpha = 0.5) +
+                 scale_fill_manual(values = c("white", not_sig_color, "red"),
+                                   labels = labels) +
+                 scale_color_manual(values = c("red", not_sig_color, "white"),
+                                    labels = labels) +
+                 theme(legend.title = element_blank(),
+                       legend.key = element_rect(fill = NA, color = NA),
+                       legend.text = element_text(face = "bold"),
+                       legend.margin = margin(unit(c(0, 0, 0, 0), "cm"))) +
+                 guides(colour = guide_legend(override.aes = list(size = 2)))
 
 volplot_legend <- as_ggplot(get_legend(vol_6d_legend_plot, "right"))
 if (save_images) {
@@ -506,28 +515,30 @@ distinct markers.
 (signatures <- preprocess.signatures("celltype_markers_basal_ta_td.csv"))
 
 skin_data$cell_type_pred <- SCINA(as.matrix(GetAssayData(skin_data)),
-                                            signatures)$cell_labels
+                                  signatures)$cell_labels
 d6_cells$cell_type_pred <- SCINA(as.matrix(GetAssayData(d6_cells)),
-                                           signatures)$cell_labels
+                                 signatures)$cell_labels
 d12_cells$cell_type_pred <- SCINA(as.matrix(GetAssayData(d12_cells)),
-                                            signatures)$cell_labels
+                                  signatures)$cell_labels
 
 d6_cells$cell_type_pred <- factor(d6_cells$cell_type_pred,
-                                             levels = c("Basal", "TA", "TD", "unknown"))
+                                  levels = c("Basal", "TA", "TD", "unknown"))
 d12_cells$cell_type_pred <- factor(d12_cells$cell_type_pred,
-                                             levels = c("Basal", "TA", "TD", "unknown"))
+                                   levels = c("Basal", "TA", "TD", "unknown"))
 
 create_cell_type_umap <- function(cells) {
     # Force factors back into correct order as this inexplicably disappears
     # when passed to a function
     cells$cell_type_pred <- factor(cells$cell_type_pred,
-                                             levels = c("Basal", "TA", "TD", "unknown"))
+                                   levels = c("Basal", "TA", "TD", "unknown"))
     p <- DimPlot(cells, group.by = "cell_type_pred") +
-    scale_color_manual(labels = c("Holoclone-forming",
-                                  "Mero- or Paraclone-forming",
-                                  "Differentiated", "Unclassified keratinocytes"),
-                      values = c("#80C9EA", "#DD6E79", "#43863E", "#BBBBBB")) +
-    coord_fixed() + umap_theme + theme(legend.position = "none")
+         scale_color_manual(labels = c("Holoclone-forming",
+                                       "Mero- or Paraclone-forming",
+                                       "Differentiated",
+                                       "Unclassified keratinocytes"),
+                            values = c("#80C9EA", "#DD6E79", "#43863E",
+                                       "#BBBBBB")) +
+         coord_fixed() + umap_theme + theme(legend.position = "none")
 
     return(p)
 }
@@ -555,30 +566,32 @@ cell_type_df_6d$Class <- factor(cell_type_df_6d$Class,
                                 levels = c("Control-6D", "ROCKi-6D",
                                            "Control-12D", "ROCKi-12D"))
 
-create_cell_type_proportion_graph <- function(df, names) {
+cell_type_prop_graph <- function(df, names) {
     p <- ggplot(df, aes(x = Class, fill = CellType)) +
-    geom_bar(position = "fill") + ylab("Proportion of cell type") +
-    labs(fill = "Cell type") +
-    scale_fill_manual(labels = c("Holoclone-forming",
-                                 "Mero- or Paraclone-forming",
-                                 "Differentiated",
-                                 "Unclassified keratinocytes"),
-                      values = c("#80C9EA", "#DD6E79", "#43863E", "#BBBBBB")) +
-    scale_x_discrete(labels = names) +
-    chart_margin_theme + axis_text_theme +
-    theme(axis.text.x = element_text(angle = 45,
-                                     hjust = 1),
-          axis.title.x = element_blank())
+         geom_bar(position = "fill") + ylab("Proportion of cell type") +
+         labs(fill = "Cell type") +
+         scale_fill_manual(labels = c("Holoclone-forming",
+                                      "Mero- or Paraclone-forming",
+                                      "Differentiated",
+                                      "Unclassified keratinocytes"),
+                           values = c("#80C9EA", "#DD6E79", "#43863E",
+                                      "#BBBBBB")) +
+         scale_x_discrete(labels = names) +
+         chart_margin_theme + axis_text_theme +
+         theme(axis.text.x = element_text(angle = 45, hjust = 1),
+               axis.title.x = element_blank())
 
     return(p)
 }
 
-cell_type_proportion_graph_6d <- create_cell_type_proportion_graph(cell_type_df_6d, c("Control-6D ", "ROCKi-6D "))
-(cell_type_proportion_graph_6d_no_legend <- cell_type_proportion_graph_6d + theme(legend.position = "none"))
+cell_type_prop_graph_6d <- cell_type_prop_graph(cell_type_df_6d,
+                                                c("Control-6D ", "ROCKi-6D "))
+(cell_type_prop_graph_6d_no_legend <- cell_type_prop_graph_6d +
+                                      theme(legend.position = "none"))
 
 if (save_images) {
-    save_tiff(cell_type_proportion_graph_6d_no_legend, "fig_6e.tiff",
-              width = 6, height = 6)
+    save_tiff(cell_type_prop_graph_6d_no_legend, "fig_6e.tiff", width = 6,
+              height = 6)
 }
 
 cell_type_df_12d <- data.frame(CellType = d12_cells$cell_type_pred,
@@ -586,11 +599,14 @@ cell_type_df_12d <- data.frame(CellType = d12_cells$cell_type_pred,
 cell_type_df_12d$Class <- factor(cell_type_df_12d$Class,
                                  levels = c("Control-6D", "ROCKi-6D",
                                             "Control-12D", "ROCKi-12D"))
-cell_type_proportion_graph_12d <- create_cell_type_proportion_graph(cell_type_df_12d, c("Control-6D 6D ", "ROCKi-6D 6D "))
-(cell_type_proportion_graph_12d_no_legend <- cell_type_proportion_graph_12d + theme(legend.position = "none"))
+cell_type_prop_graph_12d <- cell_type_prop_graph(cell_type_df_12d,
+                                                 c("Control-6D 6D ",
+                                                   "ROCKi-6D 6D "))
+(cell_type_prop_graph_12d_no_legend <- cell_type_prop_graph_12d +
+                                       theme(legend.position = "none"))
 if (save_images) {
-    save_tiff(cell_type_proportion_graph_12d_no_legend, "fig_6f.tiff",
-              width = 6, height = 6)
+    save_tiff(cell_type_prop_graph_12d_no_legend, "fig_6f.tiff", width = 6,
+              height = 6)
 }
 ```
 
@@ -674,11 +690,13 @@ for (r in 1:10000) {
 ```{r results = 'markup'}
 alpha_vals <- c(0.975, 0.025)
 residuals_6d <- prop_diffs_6d - obs_total_prop_diff_6d
-print("95% confidence interval for total absolute difference in celltype proportions at 6D:")
+print(paste0("95% confidence interval for total absolute difference in",
+             "cell type proportions at 6D:"))
 print(as.numeric(obs_total_prop_diff_6d - quantile(residuals_6d, alpha_vals)))
 
 residuals_12d <- prop_diffs_12d - obs_total_prop_diff_12d
-print("95% confidence interval for total absolute difference in celltype proportions at 12D:")
+print(paste0("95% confidence interval for total absolute difference in",
+             "cell type proportions at 12D:"))
 print(as.numeric(obs_total_prop_diff_12d - quantile(residuals_12d, alpha_vals)))
 ```
 
@@ -690,12 +708,12 @@ create_dotplot <- function(cells) {
                   features = list("Holoclone" = signatures$Basal,
                                   "Mero-/Paraclone" = signatures$TA,
                                   "Differentiated" = signatures$TD)) +
-                  axis_text_theme +
-                  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-                        axis.text = element_text(size = 10),
-                        axis.title = element_blank(),
-                        legend.title = element_text(size = 10, face = "bold"),
-                        legend.text = element_text(size = 10, face = "bold"))
+          axis_text_theme +
+          theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                axis.text = element_text(size = 10),
+                axis.title = element_blank(),
+                legend.title = element_text(size = 10, face = "bold"),
+                legend.text = element_text(size = 10, face = "bold"))
 
     return(dp)
 }
@@ -855,16 +873,20 @@ create_traj_umap <- function(sshot_to_plot, umap_curve, cell_types) {
     td_ptimes <- ptimes[which(cell_types == "TD")]
 
     percentile <- 0.97
-    basal_percentile_ptime_idx <- which(abs(quantile(basal_ptimes, percentile) - basal_ptimes) ==
-                                        min(abs(quantile(basal_ptimes, percentile) - basal_ptimes)))
-    ta_percentile_ptime_idx <- which(abs(quantile(ta_ptimes, percentile) - ta_ptimes) ==
-                                     min(abs(quantile(ta_ptimes, percentile) - ta_ptimes)))
-    td_percentile_ptime_idx <- which(abs(quantile(td_ptimes, percentile) - td_ptimes) ==
-                                     min(abs(quantile(td_ptimes, percentile) - td_ptimes)))
+    basal_ptimes_dist <- abs(quantile(basal_ptimes, percentile) - basal_ptimes)
+    basal_percentile_ptime_idx <- which.min(basal_ptimes_dist)
+    ta_ptimes_dist <- abs(quantile(ta_ptimes, percentile) - ta_ptimes)
+    ta_percentile_ptime_idx <- which.min(ta_ptimes_dist)
+    td_ptimes_dist <- abs(quantile(td_ptimes, percentile) - td_ptimes)
+    td_percentile_ptime_idx <- which.min(td_ptimes_dist)
 
     basal_percentile_ptime <- basal_ptimes[basal_percentile_ptime_idx]
     ta_percentile_ptime <- ta_ptimes[ta_percentile_ptime_idx]
     td_percentile_ptime <- td_ptimes[td_percentile_ptime_idx]
+
+    end_idx <- round(length(sshot_to_plot$slingPseudotime_1) * percentile)
+    basal_pct_overall_idx <- which(sort(ptimes) == basal_percentile_ptime)
+    ta_pct_overall_idx <- which(sort(ptimes) == ta_percentile_ptime)
 
     p <- ggplot() +
          geom_point(data = points_df, aes(x = u1, y = u2, color = cell_types),
@@ -874,19 +896,19 @@ create_traj_umap <- function(sshot_to_plot, umap_curve, cell_types) {
                            "Differentiated", "Unknown"),
                            values = c("#80C9EA", "#DD6E79",
                                       "#43863E", "#BBBBBB")) +
-        geom_path(data = curve_df[1:round(length(sshot_to_plot$slingPseudotime_1) * percentile), ],
-                  aes(x = u1, y = u2),
-                  arrow = arrow(type = "closed", length = arrowhead_length),
-                  size = arrow_width) +
+         geom_path(data = curve_df[1:end_idx, ],
+                   aes(x = u1, y = u2),
+                   arrow = arrow(type = "closed", length = arrowhead_length),
+                   size = arrow_width) +
          geom_path(data = curve_df[1:2, ],
                    aes(x = u1, y = u2),
                    arrow = arrow(type = "open", length = arrowhead_length),
                    size = arrow_width) +
-         geom_path(data = curve_df[1:which(sort(ptimes) == basal_percentile_ptime), ],
+         geom_path(data = curve_df[1:basal_pct_overall_idx, ],
                    aes(x = u1, y = u2),
                    arrow = arrow(type = "closed", length = arrowhead_length),
                    size = arrow_width) +
-         geom_path(data = curve_df[1:which(sort(ptimes) == ta_percentile_ptime), ],
+         geom_path(data = curve_df[1:ta_pct_overall_idx, ],
                    aes(x = u1, y = u2),
                    arrow = arrow(type = "closed", length = arrowhead_length),
                    size = arrow_width) +
@@ -897,23 +919,31 @@ create_traj_umap <- function(sshot_to_plot, umap_curve, cell_types) {
 
 ctrl6d_traj_umap <- create_traj_umap(sshot_ctrl6d_separate, umap_curve_ctrl6d,
                                      Idents(ctrl6d_cells))
-rocki6d_traj_umap <- create_traj_umap(sshot_rocki6d_separate, umap_curve_rocki6d,
-                                      Idents(rocki6d_cells))
-ctrl12d_traj_umap <- create_traj_umap(sshot_ctrl12d_separate, umap_curve_ctrl12d,
-                                      Idents(ctrl12d_cells))
-rocki12d_traj_umap <- create_traj_umap(sshot_rocki12d_separate, umap_curve_rocki12d,
+rocki6d_traj_umap <- create_traj_umap(sshot_rocki6d_separate,
+                                      umap_curve_rocki6d, Idents(rocki6d_cells))
+ctrl12d_traj_umap <- create_traj_umap(sshot_ctrl12d_separate,
+                                      umap_curve_ctrl12d, Idents(ctrl12d_cells))
+rocki12d_traj_umap <- create_traj_umap(sshot_rocki12d_separate,
+                                       umap_curve_rocki12d,
                                        Idents(rocki12d_cells))
 
-(ctrl6d_traj_umap_no_legend <- ctrl6d_traj_umap + theme(legend.position = "none"))
-(rocki6d_traj_umap_no_legend <- rocki6d_traj_umap + theme(legend.position = "none"))
-(ctrl12d_traj_umap_no_legend <- ctrl12d_traj_umap + theme(legend.position = "none"))
-(rocki12d_traj_umap_no_legend <- rocki12d_traj_umap + theme(legend.position = "none"))
+(ctrl6d_traj_umap_no_legend <- ctrl6d_traj_umap +
+                               theme(legend.position = "none"))
+(rocki6d_traj_umap_no_legend <- rocki6d_traj_umap +
+                                theme(legend.position = "none"))
+(ctrl12d_traj_umap_no_legend <- ctrl12d_traj_umap +
+                                theme(legend.position = "none"))
+(rocki12d_traj_umap_no_legend <- rocki12d_traj_umap +
+                                 theme(legend.position = "none"))
 
 if (save_images) {
     save_tiff(ctrl6d_traj_umap_no_legend, "fig_7a.tiff", width = 10, height = 8)
-    save_tiff(rocki6d_traj_umap_no_legend, "fig_7b.tiff", width = 10, height = 8)
-    save_tiff(ctrl12d_traj_umap_no_legend, "fig_7c.tiff", width = 10, height = 8)
-    save_tiff(rocki12d_traj_umap_no_legend, "fig_7d.tiff", width = 10, height = 8)
+    save_tiff(rocki6d_traj_umap_no_legend, "fig_7b.tiff", width = 10,
+              height = 8)
+    save_tiff(ctrl12d_traj_umap_no_legend, "fig_7c.tiff", width = 10,
+              height = 8)
+    save_tiff(rocki12d_traj_umap_no_legend, "fig_7d.tiff", width = 10,
+              height = 8)
 }
 ```
 
@@ -947,14 +977,17 @@ create_traj_df <- function(ptimes, name, cell_types) {
     return(data.frame(pct = quantile_points,
                       ptime = quantiled_data,
                       cell_type = factor(cell_types_subset,
-                                         levels = c("Basal", "TA", "TD", "unknown")),
+                                         levels = c("Basal", "TA", "TD",
+                                                    "unknown")),
                       diff = c(NA, mov_avg(diff(quantiled_data))),
                       sample_class = rep(name, length(quantile_points))))
 }
 
-traj_df_ctrl6d <- create_traj_df(sshot_ctrl6d_together$slingPseudotime_1, "Control-6D",
+traj_df_ctrl6d <- create_traj_df(sshot_ctrl6d_together$slingPseudotime_1,
+                                 "Control-6D",
                                  d6_cells[, ctrl6d_idx]$cell_type)
-traj_df_rocki6d <- create_traj_df(sshot_rocki6d_together$slingPseudotime_1, "ROCKi-6D",
+traj_df_rocki6d <- create_traj_df(sshot_rocki6d_together$slingPseudotime_1,
+                                  "ROCKi-6D",
                                   d6_cells[, rocki6d_idx]$cell_type)
 traj_df_6d <- rbind(traj_df_ctrl6d, traj_df_rocki6d)
 
@@ -966,8 +999,10 @@ traj_df_rocki12d <- create_traj_df(sshot_rocki12d_together$slingPseudotime_1,
                                    d12_cells[, rocki12d_idx]$cell_type)
 traj_df_12d <- rbind(traj_df_ctrl12d, traj_df_rocki12d)
 
-obs_result_ptime_6d <- mean(abs(traj_df_ctrl6d$ptime - traj_df_rocki6d$ptime))
-obs_result_ptime_12d <- mean(abs(traj_df_ctrl12d$ptime - traj_df_rocki12d$ptime))
+ptime_abs_diffs_6d <- abs(traj_df_ctrl6d$ptime - traj_df_rocki6d$ptime)
+obs_result_ptime_6d <- mean(ptime_abs_diffs_6d)
+ptime_abs_diffs_12d <- abs(traj_df_ctrl12d$ptime - traj_df_rocki12d$ptime)
+obs_result_ptime_12d <- mean(ptime_abs_diffs_12d)
 
 obs_result_speed_6d <- mean(abs(traj_df_ctrl6d$diff - traj_df_rocki6d$diff),
                             na.rm = TRUE)
@@ -981,33 +1016,36 @@ point_size <- 1
 create_traj_plot <- function(traj_df) {
     shade_alpha <- 0.2
 
-    basal_upper_lim <- quantile(traj_df[traj_df$cell_type == "Basal", ]$ptime, 0.75)
+    basal_upper_lim <- quantile(traj_df[traj_df$cell_type == "Basal", ]$ptime,
+                                0.75)
     ta_upper_lim <- quantile(traj_df[traj_df$cell_type == "TA", ]$ptime, 0.95)
 
-    basal_color <- "#80C9EA"
-    ta_color <- "#DD6E79"
-    td_color <- "#43863E"
+    basal_col <- "#80C9EA"
+    ta_col <- "#DD6E79"
+    td_col <- "#43863E"
 
-    traj_plot <- ggplot(traj_df, aes(x = pct, y = ptime, group = sample_class)) +
-                    annotate("rect", xmin = -Inf, xmax = Inf, ymin = -Inf,
-                             ymax = basal_upper_lim, alpha = shade_alpha,
-                             fill = basal_color) +
-                    annotate("rect", xmin = -Inf, xmax = Inf,
-                             ymin = basal_upper_lim, ymax = ta_upper_lim,
-                             alpha = shade_alpha, fill = ta_color) +
-                    annotate("rect", xmin = -Inf, xmax = Inf,
-                             ymin = ta_upper_lim, ymax = Inf,
-                             alpha = shade_alpha, fill = td_color) +
-                    geom_point(aes(color = cell_type), size = point_size) +
-                    scale_color_manual(values = c(basal_color, ta_color, td_color)) +
-                    new_scale_color() +
-                    geom_line(aes(linetype = sample_class), size = 0.4) +
-                    scale_linetype_manual(values = c("solid", "dashed")) +
-                    scale_x_continuous(labels = scales::percent, limits = c(0, 1)) +
-                    ylim(c(0, max(traj_df$ptime))) +
-                    xlab("Percentage through differentation process") +
-                    ylab("Pseudotime") + traj_plot_margin_theme +
-                    diff_comparison_plots_theme + axis_text_theme
+    traj_plot <- ggplot(traj_df,
+                        aes(x = pct, y = ptime, group = sample_class)) +
+                 annotate("rect", xmin = -Inf, xmax = Inf, ymin = -Inf,
+                          ymax = basal_upper_lim, alpha = shade_alpha,
+                          fill = basal_col) +
+                 annotate("rect", xmin = -Inf, xmax = Inf,
+                          ymin = basal_upper_lim, ymax = ta_upper_lim,
+                          alpha = shade_alpha, fill = ta_col) +
+                 annotate("rect", xmin = -Inf, xmax = Inf,
+                          ymin = ta_upper_lim, ymax = Inf,
+                          alpha = shade_alpha, fill = td_col) +
+                 geom_point(aes(color = cell_type), size = point_size) +
+                 scale_color_manual(values = c(basal_col, ta_col, td_col)) +
+                 new_scale_color() +
+                 geom_line(aes(linetype = sample_class), size = 0.4) +
+                 scale_linetype_manual(values = c("solid", "dashed")) +
+                 scale_x_continuous(labels = scales::percent,
+                                    limits = c(0, 1)) +
+                 ylim(c(0, max(traj_df$ptime))) +
+                 xlab("Percentage through differentation process") +
+                 ylab("Pseudotime") + traj_plot_margin_theme +
+                 diff_comparison_plots_theme + axis_text_theme
 
     return(traj_plot)
 }
@@ -1025,13 +1063,16 @@ if (save_images) {
 
 
 create_speed_plot <- function(traj_df) {
-    speed_plot <- ggplot(traj_df, aes(x = pct, y = diff, group = sample_class)) +
+    speed_plot <- ggplot(traj_df,
+                         aes(x = pct, y = diff, group = sample_class)) +
                   geom_point(aes(color = cell_type), size = point_size) +
-                  scale_color_manual(values = c("#80C9EA", "#DD6E79", "#43863E")) +
+                  scale_color_manual(values = c("#80C9EA", "#DD6E79",
+                                                "#43863E")) +
                   new_scale_color() +
                   geom_line(aes(linetype = sample_class), size = 0.4) +
                   scale_linetype_manual(values = c("solid", "dashed")) +
-                  scale_x_continuous(labels = scales::percent, limits = c(0, 1)) +
+                  scale_x_continuous(labels = scales::percent,
+                                     limits = c(0, 1)) +
                   xlab("Percentage through differentation process") +
                   ylab("Differentiation speed") + traj_plot_margin_theme +
                   diff_comparison_plots_theme + axis_text_theme
@@ -1040,8 +1081,10 @@ create_speed_plot <- function(traj_df) {
 }
 
 
-(speed_plot_6d <- create_speed_plot(traj_df_6d) + theme(legend.position = "none"))
-(speed_plot_12d <- create_speed_plot(traj_df_12d) + theme(legend.position = "none"))
+(speed_plot_6d <- create_speed_plot(traj_df_6d) +
+                  theme(legend.position = "none"))
+(speed_plot_12d <- create_speed_plot(traj_df_12d) +
+                   theme(legend.position = "none"))
 
 if (save_images) {
     save_tiff(speed_plot_6d, "fig_s3a.tiff", width = 14, height = 8)
@@ -1049,25 +1092,25 @@ if (save_images) {
 }
 
 
-for_dot_colour_legend <- ggplot(traj_df_6d,
-                                aes(x = pct, y = ptime, group = sample_class)) +
-                         geom_point(aes(color = cell_type), size = 3) +
-                         scale_color_manual(values = c("#80C9EA", "#DD6E79", "#43863E"),
-                                            labels = c("Holoclone-forming",
-                                                       "Mero- or Paraclone-forming",
-                                                       "Differentiated")) +
-                         theme(legend.title = element_blank(),
-                               legend.text = element_text(face = "bold"))
-dot_colour_legend <- as_ggplot(get_legend(for_dot_colour_legend, "right"))
+legend_plot <- ggplot(traj_df_6d,
+                      aes(x = pct, y = ptime, group = sample_class)) +
+               geom_point(aes(color = cell_type), size = 3) +
+               scale_color_manual(values = c("#80C9EA", "#DD6E79", "#43863E"),
+                                  labels = c("Holoclone-forming",
+                                             "Mero- or Paraclone-forming",
+                                             "Differentiated")) +
+               theme(legend.title = element_blank(),
+                     legend.text = element_text(face = "bold"))
+dot_colour_legend <- as_ggplot(get_legend(legend_plot, "right"))
 
-for_linetype_legend <- ggplot(traj_df_6d,
-                                 aes(x = pct, y = ptime, group = sample_class)) +
-                          geom_line(aes(linetype = sample_class), size = 0.4) +
-                          scale_linetype_manual(values = c("solid", "dashed"),
-                                                labels = c("Control", "ROCKi-treated")) +
-                          theme(legend.title = element_blank(),
-                                legend.text = element_text(face = "bold"))
-linetype_legend <- as_ggplot(get_legend(for_linetype_legend, "right"))
+legend_plot <- ggplot(traj_df_6d,
+                      aes(x = pct, y = ptime, group = sample_class)) +
+               geom_line(aes(linetype = sample_class), size = 0.4) +
+               scale_linetype_manual(values = c("solid", "dashed"),
+                                     labels = c("Control", "ROCKi-treated")) +
+               theme(legend.title = element_blank(),
+                     legend.text = element_text(face = "bold"))
+linetype_legend <- as_ggplot(get_legend(legend_plot, "right"))
 
 (legends <- ggarrange(linetype_legend, dot_colour_legend, ncol = 2))
 if (save_images) {
@@ -1081,30 +1124,30 @@ if (save_images) {
 # Generate bootstrapped data as in "experiment_code_trajectories.R" and save
 # the outputs as "trajectory_comparison_results.txt"
 
-bootstrap_results <- read.table("trajectory_comparison_results.txt")
-bootstrap_results <- bootstrap_results[, c(3, 4, 5, 6)]
-colnames(bootstrap_results) <- c("TrajDiff6D", "TrajDiff12D", "SpeedDiff6D",
+bs_out <- read.table("trajectory_comparison_results.txt")
+bs_out <- bs_out[, c(3, 4, 5, 6)]
+colnames(bs_out) <- c("TrajDiff6D", "TrajDiff12D", "SpeedDiff6D",
                                  "SpeedDiff12D")
 
-diffs_quants_traj6d <- quantile((bootstrap_results$TrajDiff6D - obs_result_ptime_6d),
+diffs_quants_traj6d <- quantile((bs_out$TrajDiff6D - obs_result_ptime_6d),
                                 alpha_vals)
 residuals_traj6d <- as.numeric(obs_result_ptime_6d - diffs_quants_traj6d)
 print(paste("95% confidence interval for difference in pseudotimes at 6D:",
             paste(residuals_traj6d, collapse = " ")))
 
-diffs_quants_traj12d <- quantile((bootstrap_results$TrajDiff12D - obs_result_ptime_12d),
+diffs_quants_traj12d <- quantile((bs_out$TrajDiff12D - obs_result_ptime_12d),
                                 alpha_vals)
 residuals_traj12d <- as.numeric(obs_result_ptime_12d - diffs_quants_traj12d)
 print(paste("95% confidence interval for difference in pseudotimes at 12D:",
             paste(residuals_traj12d, collapse = " ")))
 
-diffs_quants_speed6d <- quantile((bootstrap_results$SpeedDiff6D - obs_result_speed_6d),
+diffs_quants_speed6d <- quantile((bs_out$SpeedDiff6D - obs_result_speed_6d),
                                   alpha_vals)
 residuals_speed6d <- as.numeric(obs_result_speed_6d - diffs_quants_speed6d)
 print(paste("95% confidence interval for difference in speed at 6D:",
             paste(residuals_speed6d, collapse = " ")))
 
-diffs_quants_speed12d <- quantile((bootstrap_results$SpeedDiff12D - obs_result_speed_12d),
+diffs_quants_speed12d <- quantile((bs_out$SpeedDiff12D - obs_result_speed_12d),
                                   alpha_vals)
 residuals_speed12d <- as.numeric(obs_result_speed_12d - diffs_quants_speed12d)
 print(paste("95% confidence interval for difference in speed at 12D:",
@@ -1120,21 +1163,23 @@ skin_data_with_outliers <- skin_data_with_outliers %>%
                            SCTransform() %>%
                            CellCycleScoring(s.features = s_genes,
                                             g2m.features = g2m_genes)
-skin_data_with_outliers$CC.difference <- skin_data_with_outliers$S.Score - skin_data_with_outliers$G2M.Score
+skin_data_with_outliers$CC.difference <- skin_data_with_outliers$S.Score -
+                                         skin_data_with_outliers$G2M.Score
 skin_data_with_outliers <- skin_data_with_outliers %>%
                            SCTransform(vars.to.regress = c("CC.difference")) %>%
                            RunPCA(features = skin_data_with_outliers@assays$SCT@var.features,
                                   npcs = 50)
-skin_data_with_outliers$donor_idents <- sapply(skin_data_with_outliers$orig.ident,
-                                                         function(x) {
-                                                             if (x %in% c("1", "2", "3", "4")) {
-                                                                 "1"
-                                                             } else if (x %in% c("5", "6", "7", "8")) {
-                                                                 "2"
-                                                             } else {
-                                                                 "3"
-                                                             }
-                                                         })
+donor_idents <- sapply(skin_data_with_outliers$orig.ident,
+                       function(x) {
+                           if (x %in% c("1", "2", "3", "4")) {
+                               "1"
+                           } else if (x %in% c("5", "6", "7", "8")) {
+                               "2"
+                           } else {
+                               "3"
+                           }
+                       })
+skin_data_with_outliers$donor_idents <- donor_idents
 skin_data_with_outliers <- skin_data_with_outliers %>%
                            RunHarmony("donor_idents", assay.use = "SCT") %>%
                            RunUMAP(dims = 1:50, reduction = "harmony")
