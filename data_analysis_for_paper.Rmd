@@ -20,8 +20,8 @@ output:
 ---
 
 ```{r results = 'hide', message = FALSE, warning = FALSE, include = FALSE}
-knitr::opts_chunk$set(results = 'hide', message = FALSE, warning = FALSE,
-                      fig.align = 'center')
+knitr::opts_chunk$set(results = "hide", message = FALSE, warning = FALSE,
+                      fig.align = "center")
 
 # Tidyverse
 library(dplyr)
@@ -48,7 +48,7 @@ library(SingleCellExperiment)
 library(DAseq)
 
 # Set ggplot theme
-theme_update(plot.title = element_text(face="bold", size=12, hjust=0.5))
+theme_update(plot.title = element_text(face = "bold", size = 12, hjust = 0.5))
 theme_update(axis.text = element_text(size = 10, face = "plain"))
 theme_update(axis.title = element_text(size = 10, face = "plain"))
 
@@ -109,14 +109,14 @@ inter-sample variation.
 # Compute percentage of mitochondrial DNA in each cell
 skin_data[["percent.mt"]] <- PercentageFeatureSet(skin_data, pattern = "^MT-")
 
-VlnPlot_limits <- function(data, metric, ylab, limits) {
-    df <- data.frame(x=Idents(data), y = data$metric)
-    plot <- ggplot() + geom_violin(data = df, aes(x=x, y=y, fill=x)) +
+vlnplot_limits <- function(data, metric, ylab, limits) {
+    df <- data.frame(x = Idents(data), y = data$metric)
+    plot <- ggplot() + geom_violin(data = df, aes(x = x, y = y, fill = x)) +
             geom_errorbar(data = limits, aes(x = x, ymin = lower, ymax = upper),
                           color = "red") +
-            labs(y=ylab) +
+            labs(y = ylab) +
             scale_y_continuous(labels = scales::comma) +
-            theme(axis.text.x = element_text(angle = 45, hjust=1),
+            theme(axis.text.x = element_text(angle = 45, hjust = 1),
                   legend.position = "none", plot.title = element_blank(),
                   axis.title.x = element_blank()) + axis_text_theme
 
@@ -131,10 +131,10 @@ ncount_df <- data.frame(x = levels(Idents(skin_data)),
                                   50000, 50000, 50000, 50000,
                                   50000, 50000, 40000, 40000))
 
-(ncount_vln <- VlnPlot_limits(skin_data, "nCount_RNA",
+(ncount_vln <- vlnplot_limits(skin_data, "nCount_RNA",
                                "Number of RNA\nmolecules per cell",
                                ncount_df) + ylim(c(0, 100000)))
-if(save_images) {
+if (save_images) {
     save_tiff(ncount_vln, "fig_s4a.tiff")
 }
 
@@ -146,10 +146,10 @@ nfeature_df <- data.frame(x = levels(Idents(skin_data)),
                                7500, 7500, 7500, 7500,
                                7500, 7500, 6000, 6000))
 
-(nfeature_vln <- VlnPlot_limits(skin_data, "nFeature_RNA",
+(nfeature_vln <- vlnplot_limits(skin_data, "nFeature_RNA",
                                "Number of genes\ndetected per cell",
                                nfeature_df))
-if(save_images) {
+if (save_images) {
     save_tiff(nfeature_vln, "fig_s4b.tiff")
 }
 
@@ -157,10 +157,10 @@ pct_mito_df <- data.frame(x = levels(Idents(skin_data)),
                         lower = c(rep(2, 8), rep(3, 4)),
                         upper = c(rep(10, 8), rep(12, 4)))
 
-(pct_mito_vln <- VlnPlot_limits(skin_data, "percent.mt",
+(pct_mito_vln <- vlnplot_limits(skin_data, "percent.mt",
                                "Percentage of mitochrondrial\nDNA detected per cell",
                                pct_mito_df) + ylim(c(0, 20)))
-if(save_images) {
+if (save_images) {
     save_tiff(pct_mito_vln, "fig_s4c.tiff")
 }
 
@@ -184,18 +184,18 @@ of markers of melanocytes (MLANA, PMEL, MITF), mesenchymal cells (MTRNR2L6,
 MTRNR2L10, MTRNR2L7, MTRNR2L1, PRKAR2B, NR2F1), or fibroblasts (ACTG2, DLK1).
 
 ```{r}
-skin_data.with_outliers <- skin_data
+skin_data_with_outliers <- skin_data
 
 # Remove melanocytes
 skin_data <- subset(skin_data, subset = MLANA > 1 | PMEL > 1 | MITF > 1,
-                    invert = T)
+                    invert = TRUE)
 # Remove mesenchymal cells
 skin_data <- subset(skin_data,
                     subset = MTRNR2L6 > 1 | MTRNR2L10 > 1 | MTRNR2L7 > 1 |
                              MTRNR2L1 > 1 | PRKAR2B > 1 | NR2F1 > 1,
-                    invert = T)
+                    invert = TRUE)
 # Remove fibroblasts
-skin_data <- subset(skin_data, subset = ACTG2 > 1 | DLK1 > 1, invert = T)
+skin_data <- subset(skin_data, subset = ACTG2 > 1 | DLK1 > 1, invert = TRUE)
 ```
 
 ## Normalise the data
@@ -204,7 +204,7 @@ We normalised the gene expressions using sctransform.
 
 ```{r}
 skin_data <- SCTransform(skin_data)
-skin_data.outliers_removed <- skin_data
+skin_data_outliers_removed <- skin_data
 ```
 
 ## Regress out cell cycle
@@ -218,13 +218,13 @@ recommend this approach when dealing with cells undergoing differentiation
 "Alternative Workflow").
 
 ```{r}
-s.genes <- cc.genes$s.genes
-g2m.genes <- cc.genes$g2m.genes
-skin_data <- CellCycleScoring(skin_data, s.features = s.genes,
-                              g2m.features = g2m.genes)
+s_genes <- cc.genes$s_genes
+g2m_genes <- cc.genes$g2m_genes
+skin_data <- CellCycleScoring(skin_data, s.features = s_genes,
+                              g2m.features = g2m_genes)
 skin_data$CC.difference <- skin_data$S.Score - skin_data$G2M.Score
 skin_data <- SCTransform(skin_data, vars.to.regress = c("CC.difference"))
-skin_data.cell_cycle_regressed <- skin_data
+skin_data_cell_cycle_regressed <- skin_data
 ```
 
 ## Run PCA and remove donor effect
@@ -240,25 +240,38 @@ variation with Harmony.
 skin_data <- RunPCA(skin_data, features = skin_data@assays$SCT@var.features,
                     npcs = 50)
 (elbow_plot <- ElbowPlot(skin_data, ndims = 50) + axis_text_theme)
-if(save_images) {
+if (save_images) {
     save_tiff(elbow_plot, "fig_s5.tiff")
 }
 
 # Remove inter-donor differences using Harmony
 donor_idents <- sapply(skin_data$orig.ident,
-                       function(x) if (x %in% c("1","2","3","4")) {"1"}
-                                   else if (x %in% c("5","6","7","8")) {"2"}
-                                   else {"3"})
+                       function(x) {
+                           if (x %in% c("1", "2", "3", "4")) {
+                               "1"
+                           } else if (x %in% c("5", "6", "7", "8")) {
+                               "2"
+                           } else {
+                               "3"
+                           }
+                       })
 skin_data$donor_idents <- donor_idents
 
 skin_data <- skin_data %>% RunHarmony("donor_idents", assay.use = "SCT")
-skin_data.harmonised <- skin_data
+skin_data_harmonised <- skin_data
 
 sample_class <- sapply(skin_data$orig.ident,
-                       function(x) if (x %in% c("1","5","9")) {"Control-6D"}
-                                   else if (x %in% c("2","6","10")) {"ROCKi-6D"}
-                                   else if (x %in% c("3","7","11")) {"Control-12D"}
-                                   else {"ROCKi-12D"})
+                       function(x) {
+                           if (x %in% c("1", "5", "9")) {
+                               "Control-6D"
+                           } else if (x %in% c("2", "6", "10")) {
+                               "ROCKi-6D"
+                           } else if (x %in% c("3", "7", "11")) {
+                               "Control-12D"
+                           } else {
+                               "ROCKi-12D"
+                           }
+                       })
 skin_data$sample_class <- sample_class
 skin_data$sample_class <- factor(skin_data$sample_class,
                                            levels = c("Control-6D", "ROCKi-6D",
@@ -266,8 +279,13 @@ skin_data$sample_class <- factor(skin_data$sample_class,
                                                       "ROCKi-12D"))
 
 treatment_class <- sapply(skin_data$sample_class,
-                       function(x) if (x %in% c("Control-6D","Control-12D")) {"Control"}
-                                   else {"ROCKi"})
+                       function(x) {
+                           if (x %in% c("Control-6D", "Control-12D")) {
+                               "Control"
+                           } else {
+                               "ROCKi"
+                           }
+                       })
 skin_data$treatment_class <- treatment_class
 ```
 
@@ -285,7 +303,7 @@ d6_cells <- RunUMAP(d6_cells, dims = 1:50, reduction = "harmony")
 d12_cells <- RunUMAP(d12_cells, dims = 1:50, reduction = "harmony")
 
 umap_theme <- theme(axis.line = element_blank(), axis.text.x = element_blank(),
-                    axis.text.y=element_blank(), axis.ticks = element_blank(),
+                    axis.text.y = element_blank(), axis.ticks = element_blank(),
                     axis.title.x = element_blank(),
                     axis.title.y = element_blank(),
                     panel.grid.major = element_blank(),
@@ -303,14 +321,14 @@ umap_legend_plot <- ggplot(data.frame(class = as.character(1:length(labels)),
                                        values = c(blue_color, red_color)) +
                     theme(legend.title = element_blank(),
                           legend.key = element_rect(fill = NA, color = NA),
-                          legend.margin = margin(c(0,0,0,0)),
+                          legend.margin = margin(c(0, 0, 0, 0)),
                           legend.text = element_text(face = "bold"),
-                          legend.background = element_rect(fill="#00000000",
-                                                           size=0.5,
-                                                           linetype="solid")) +
-                    guides(colour = guide_legend(override.aes = list(size=2)))
+                          legend.background = element_rect(fill = "#00000000",
+                                                           size = 0.5,
+                                                           linetype = "solid")) +
+                    guides(colour = guide_legend(override.aes = list(size = 2)))
 umap_legend <- as_ggplot(get_legend(umap_legend_plot, "left"))
-if(save_images) {
+if (save_images) {
     save_tiff(umap_legend, "umap_legend.tiff")
 }
 
@@ -324,12 +342,12 @@ plot_treatment_class_umap <- function(cells) {
 }
 
 (umap_d6 <- plot_treatment_class_umap(d6_cells))
-if(save_images) {
+if (save_images) {
     save_tiff(umap_d6, "fig_5a.tiff")
 }
 
 (umap_d12 <- plot_treatment_class_umap(d12_cells))
-if(save_images) {
+if (save_images) {
     save_tiff(umap_d12, "fig_5b.tiff")
 }
 ```
@@ -360,7 +378,7 @@ daseq_legend <- as_ggplot(get_legend(daseq_out_12d$pred.plot +
                                      theme(legend.position = "top",
                                            legend.text = element_blank())))
 
-if(save_images) {
+if (save_images) {
     save_tiff(daseq_legend, "daseq_legend.tiff")
 }
 
@@ -371,12 +389,12 @@ create_daseq_umap <- function(daseq_out) {
 }
 
 (daseq_umap_6d <- create_daseq_umap(daseq_out_6d))
-if(save_images) {
+if (save_images) {
     save_tiff(daseq_umap_6d, "fig_5c.tiff")
 }
 
 (daseq_umap_12d <- create_daseq_umap(daseq_out_12d))
-if(save_images) {
+if (save_images) {
     save_tiff(daseq_umap_12d, "fig_5d.tiff")
 }
 
@@ -406,15 +424,15 @@ marks_12d <- FindMarkers(skin_data, ident.1 = "ROCKi-12D",
 
 not_sig_color <- "#4D4D4D"
 
-VolPlot <- function(marks) {
+vol_plot <- function(marks) {
     marks$p_val_adj_neg_log <- (-1) * log10(marks$p_val_adj)
     marks$p_val_adj_neg_log[is.infinite(marks$p_val_adj_neg_log)] <- 300
     sig_marks_pos <- subset(marks, avg_log2FC > 1)
     sig_marks_neg <- subset(marks, avg_log2FC < -1)
 
     # Assign classes to genes based on how DE they are. Used to set colours
-    de_class <- ifelse(marks$avg_log2FC < -1 & marks$p_val_adj < 0.01, 'Downreg',
-                  ifelse(marks$avg_log2FC > 1 & marks$p_val_adj < 0.01, 'Upreg',
+    de_class <- ifelse(marks$avg_log2FC < -1 & marks$p_val_adj < 0.01, "Downreg",
+                  ifelse(marks$avg_log2FC > 1 & marks$p_val_adj < 0.01, "Upreg",
                          ifelse(marks$p_val_adj < 0.01, "Low-LFC", "Not-Sig")))
     de_class <- factor(de_class, levels = c("Not-Sig", "Low-LFC",
                                             "Downreg", "Upreg"))
@@ -431,7 +449,7 @@ VolPlot <- function(marks) {
             xlim(-2.5, 2.5) + ylim(-log10(0.01), 350) +
             xlab(bquote(bold(Log["2"]~"fold change"))) +
             ylab(bquote(bold(-Log["10"] ~ P))) +
-            theme(legend.position="none",
+            theme(legend.position = "none",
                   panel.grid.major = element_blank(),
                   panel.grid.minor = element_blank(),
                   panel.background = element_blank(),
@@ -439,11 +457,11 @@ VolPlot <- function(marks) {
             axis_text_theme +
             coord_cartesian(clip = "off")
 
-    return (plot)
+    return(plot)
 }
 
-(vol_6d <- VolPlot(marks_6d))
-if(save_images) {
+(vol_6d <- vol_plot(marks_6d))
+if (save_images) {
     save_tiff(vol_6d, "fig_5e.tiff", height = 5, width = 10)
 }
 
@@ -462,16 +480,16 @@ vol_6d_legend_plot <- ggplot(data.frame(class = as.character(1:length(labels)),
                       theme(legend.title = element_blank(),
                             legend.key = element_rect(fill = NA, color = NA),
                             legend.text = element_text(face = "bold"),
-                            legend.margin=margin(unit(c(0, 0, 0, 0), "cm"))) +
+                            legend.margin = margin(unit(c(0, 0, 0, 0), "cm"))) +
                       guides(colour = guide_legend(override.aes = list(size = 2)))
 
 volplot_legend <- as_ggplot(get_legend(vol_6d_legend_plot, "right"))
-if(save_images) {
+if (save_images) {
     save_tiff(volplot_legend, "volplot_legend.tiff")
 }
 
-(vol_12d <- VolPlot(marks_12d))
-if(save_images) {
+(vol_12d <- vol_plot(marks_12d))
+if (save_images) {
     save_tiff(vol_12d, "fig_5f.tiff", height = 5, width = 10)
 }
 ```
@@ -505,9 +523,9 @@ create_cell_type_umap <- function(cells) {
     cells$cell_type_pred <- factor(cells$cell_type_pred,
                                              levels = c("Basal", "TA", "TD", "unknown"))
     p <- DimPlot(cells, group.by = "cell_type_pred") +
-    scale_color_manual(labels=c("Holoclone-forming",
-                               "Mero- or Paraclone-forming",
-                               "Differentiated", "Unclassified keratinocytes"),
+    scale_color_manual(labels = c("Holoclone-forming",
+                                  "Mero- or Paraclone-forming",
+                                  "Differentiated", "Unclassified keratinocytes"),
                       values = c("#80C9EA", "#DD6E79", "#43863E", "#BBBBBB")) +
     coord_fixed() + umap_theme + theme(legend.position = "none")
 
@@ -585,10 +603,10 @@ We now compute 95% confidence intervals around the differences in cell type
 proportions at both timepoints.
 
 ```{r}
-prop_table_cell_type <- function(x) {prop.table(table(factor(x, levels =
-                                                             c("Basal", "TA",
-                                                               "TD",
-                                                               "unknown"))))}
+prop_table_cell_type <- function(x) {
+    return(prop.table(table(factor(x, levels = c("Basal", "TA", "TD",
+                                                 "unknown")))))
+}
 
 calc_cell_type_props <- function(cell_types, treatment_classes) {
     # Calculate the proportion of each cell type for both treatment classes.
@@ -626,7 +644,7 @@ for (r in 1:10000) {
                       length(which(d6_cells$treatment_class == "Control")),
                       replace = TRUE)
     r6d_idx <- sample(which(d6_cells$treatment_class == "ROCKi"),
-                      length(which(d6_cells$treatment_class == "ROCKi"))-1,
+                      length(which(d6_cells$treatment_class == "ROCKi")) - 1,
                       replace = TRUE)
     d6_idx <- c(c6d_idx, r6d_idx)
 
@@ -634,7 +652,7 @@ for (r in 1:10000) {
                       length(which(d12_cells$treatment_class == "Control")),
                       replace = TRUE)
     r12d_idx <- sample(which(d12_cells$treatment_class == "ROCKi"),
-                      length(which(d12_cells$treatment_class == "ROCKi"))-1,
+                      length(which(d12_cells$treatment_class == "ROCKi")) - 1,
                       replace = TRUE)
     d12_idx <- c(c12d_idx, r12d_idx)
 
@@ -735,8 +753,8 @@ prepare_cells_for_slingshot <- function(cells) {
     } else {
     cells <- RenameIdents(object = cells, "0" = "TA", "1" = "TD", "2" = "Basal")
     }
-    
-    return (cells)
+
+    return(cells)
 }
 
 d6_cells <- prepare_cells_for_slingshot(d6_cells)
@@ -750,42 +768,42 @@ rocki12d_cells <- prepare_cells_for_slingshot(rocki12d_cells)
 ## Computing Trajectories
 
 ```{r}
-colors <- colorRampPalette(brewer.pal(11,'Spectral')[-6])(100)
+colors <- colorRampPalette(brewer.pal(11, "Spectral")[-6])(100)
 
-d6_cells.sce <- as.SingleCellExperiment(d6_cells)
-d12_cells.sce <- as.SingleCellExperiment(d12_cells)
-ctrl6d_cells.sce <- as.SingleCellExperiment(ctrl6d_cells)
-rocki6d_cells.sce <- as.SingleCellExperiment(rocki6d_cells)
-ctrl12d_cells.sce <- as.SingleCellExperiment(ctrl12d_cells)
-rocki12d_cells.sce <- as.SingleCellExperiment(rocki12d_cells)
+d6_cells_sce <- as.SingleCellExperiment(d6_cells)
+d12_cells_sce <- as.SingleCellExperiment(d12_cells)
+ctrl6d_cells_sce <- as.SingleCellExperiment(ctrl6d_cells)
+rocki6d_cells_sce <- as.SingleCellExperiment(rocki6d_cells)
+ctrl12d_cells_sce <- as.SingleCellExperiment(ctrl12d_cells)
+rocki12d_cells_sce <- as.SingleCellExperiment(rocki12d_cells)
 
 # Change UMAP values to make figures all similarly oriented
-reducedDim(ctrl6d_cells.sce, "UMAP")[,2] <- (-1) * reducedDims(ctrl6d_cells.sce)$UMAP[,2]
-reducedDim(rocki6d_cells.sce, "UMAP")[,2] <- (-1) * reducedDims(rocki6d_cells.sce)$UMAP[,2]
-reducedDim(ctrl12d_cells.sce, "UMAP")[,1] <- (-1) * reducedDims(ctrl12d_cells.sce)$UMAP[,1]
+reducedDim(ctrl6d_cells_sce, "UMAP")[, 2] <- (-1) * reducedDims(ctrl6d_cells_sce)$UMAP[, 2]
+reducedDim(rocki6d_cells_sce, "UMAP")[, 2] <- (-1) * reducedDims(rocki6d_cells_sce)$UMAP[, 2]
+reducedDim(ctrl12d_cells_sce, "UMAP")[, 1] <- (-1) * reducedDims(ctrl12d_cells_sce)$UMAP[, 1]
 
-sshot_6d <- slingshot(d6_cells.sce, Idents(d6_cells),
+sshot_6d <- slingshot(d6_cells_sce, Idents(d6_cells),
                       reducedDim = "HARMONY", start.clus = "Basal")
-sshot_12d <- slingshot(d12_cells.sce, Idents(d12_cells),
+sshot_12d <- slingshot(d12_cells_sce, Idents(d12_cells),
                        reducedDim = "HARMONY", start.clus = "Basal")
 
-sshot_ctrl6d_separate <- slingshot(ctrl6d_cells.sce,
+sshot_ctrl6d_separate <- slingshot(ctrl6d_cells_sce,
                                    Idents(ctrl6d_cells),
                                    reducedDim = "UMAP", start.clus = "Basal")
-sshot_rocki6d_separate <- slingshot(rocki6d_cells.sce,
+sshot_rocki6d_separate <- slingshot(rocki6d_cells_sce,
                                     Idents(rocki6d_cells),
                                     reducedDim = "UMAP", start.clus = "Basal")
-sshot_ctrl12d_separate <- slingshot(ctrl12d_cells.sce,
+sshot_ctrl12d_separate <- slingshot(ctrl12d_cells_sce,
                                     Idents(ctrl12d_cells),
                                     reducedDim = "UMAP", start.clus = "Basal")
-sshot_rocki12d_separate <- slingshot(rocki12d_cells.sce,
+sshot_rocki12d_separate <- slingshot(rocki12d_cells_sce,
                                      Idents(rocki12d_cells),
                                      reducedDim = "UMAP", start.clus = "Basal")
 
 umap_curve_6d <- slingCurves(embedCurves(sshot_6d,
-                                         reducedDims(d6_cells.sce)$UMAP))[[1]]
+                                         reducedDims(d6_cells_sce)$UMAP))[[1]]
 umap_curve_12d <- slingCurves(embedCurves(sshot_12d,
-                                          reducedDims(d12_cells.sce)$UMAP))[[1]]
+                                          reducedDims(d12_cells_sce)$UMAP))[[1]]
 
 umap_curve_ctrl6d <- slingCurves(sshot_ctrl6d_separate)[[1]]
 umap_curve_rocki6d <- slingCurves(sshot_rocki6d_separate)[[1]]
@@ -797,36 +815,36 @@ rocki6d_idx <- which(d6_cells$treatment_class == "ROCKi")
 ctrl12d_idx <- which(d12_cells$treatment_class == "Control")
 rocki12d_idx <- which(d12_cells$treatment_class == "ROCKi")
 
-sshot_ctrl6d_together <- sshot_6d[,ctrl6d_idx]
-sshot_rocki6d_together <- sshot_6d[,rocki6d_idx]
-sshot_ctrl12d_together <- sshot_12d[,ctrl12d_idx]
-sshot_rocki12d_together <- sshot_12d[,rocki12d_idx]
+sshot_ctrl6d_together <- sshot_6d[, ctrl6d_idx]
+sshot_rocki6d_together <- sshot_6d[, rocki6d_idx]
+sshot_ctrl12d_together <- sshot_12d[, ctrl12d_idx]
+sshot_rocki12d_together <- sshot_12d[, rocki12d_idx]
 
-xmin_sep <- min(reducedDim(ctrl6d_cells.sce, "UMAP")[,1],
-                reducedDim(rocki6d_cells.sce, "UMAP")[,1],
-                reducedDim(ctrl12d_cells.sce, "UMAP")[,1],
-                reducedDim(rocki12d_cells.sce, "UMAP")[,1])
-xmax_sep <- max(reducedDim(ctrl6d_cells.sce, "UMAP")[,1],
-                reducedDim(rocki6d_cells.sce, "UMAP")[,1],
-                reducedDim(ctrl12d_cells.sce, "UMAP")[,1],
-                reducedDim(rocki12d_cells.sce, "UMAP")[,1])
-ymin_sep <- min(reducedDim(ctrl6d_cells.sce, "UMAP")[,2],
-                reducedDim(rocki6d_cells.sce, "UMAP")[,2],
-                reducedDim(ctrl12d_cells.sce, "UMAP")[,2],
-                reducedDim(rocki12d_cells.sce, "UMAP")[,2])
-ymax_sep <- max(reducedDim(ctrl6d_cells.sce, "UMAP")[,2],
-                reducedDim(rocki6d_cells.sce, "UMAP")[,2],
-                reducedDim(ctrl12d_cells.sce, "UMAP")[,2],
-                reducedDim(rocki12d_cells.sce, "UMAP")[,2])
+xmin_sep <- min(reducedDim(ctrl6d_cells_sce, "UMAP")[, 1],
+                reducedDim(rocki6d_cells_sce, "UMAP")[, 1],
+                reducedDim(ctrl12d_cells_sce, "UMAP")[, 1],
+                reducedDim(rocki12d_cells_sce, "UMAP")[, 1])
+xmax_sep <- max(reducedDim(ctrl6d_cells_sce, "UMAP")[, 1],
+                reducedDim(rocki6d_cells_sce, "UMAP")[, 1],
+                reducedDim(ctrl12d_cells_sce, "UMAP")[, 1],
+                reducedDim(rocki12d_cells_sce, "UMAP")[, 1])
+ymin_sep <- min(reducedDim(ctrl6d_cells_sce, "UMAP")[, 2],
+                reducedDim(rocki6d_cells_sce, "UMAP")[, 2],
+                reducedDim(ctrl12d_cells_sce, "UMAP")[, 2],
+                reducedDim(rocki12d_cells_sce, "UMAP")[, 2])
+ymax_sep <- max(reducedDim(ctrl6d_cells_sce, "UMAP")[, 2],
+                reducedDim(rocki6d_cells_sce, "UMAP")[, 2],
+                reducedDim(ctrl12d_cells_sce, "UMAP")[, 2],
+                reducedDim(rocki12d_cells_sce, "UMAP")[, 2])
 
 create_traj_umap <- function(sshot_to_plot, umap_curve, cell_types) {
-    points_df <- data.frame(u1 = reducedDims(sshot_to_plot)$UMAP[,1],
-                            u2 = reducedDims(sshot_to_plot)$UMAP[,2],
-                            cell_types=cell_types)
+    points_df <- data.frame(u1 = reducedDims(sshot_to_plot)$UMAP[, 1],
+                            u2 = reducedDims(sshot_to_plot)$UMAP[, 2],
+                            cell_types = cell_types)
     points_df$cell_types <- factor(points_df$cell_types,
                                    levels = c("Basal", "TA", "TD", "unknown"))
-    curve_df <- data.frame(u1 = umap_curve$s[umap_curve$ord, ][,1],
-                           u2 = umap_curve$s[umap_curve$ord, ][,2])
+    curve_df <- data.frame(u1 = umap_curve$s[umap_curve$ord, ][, 1],
+                           u2 = umap_curve$s[umap_curve$ord, ][, 2])
 
     arrowhead_length <- unit(0.2, "cm")
     arrow_width <- 1
@@ -851,7 +869,7 @@ create_traj_umap <- function(sshot_to_plot, umap_curve, cell_types) {
     p <- ggplot() +
          geom_point(data = points_df, aes(x = u1, y = u2, color = cell_types),
                     size = -0.1) +
-         scale_color_manual(labels=c("Holoclone-forming",
+         scale_color_manual(labels = c("Holoclone-forming",
                            "Mero- or Paraclone-forming",
                            "Differentiated", "Unknown"),
                            values = c("#80C9EA", "#DD6E79",
@@ -860,7 +878,7 @@ create_traj_umap <- function(sshot_to_plot, umap_curve, cell_types) {
                   aes(x = u1, y = u2),
                   arrow = arrow(type = "closed", length = arrowhead_length),
                   size = arrow_width) +
-         geom_path(data = curve_df[1:2,],
+         geom_path(data = curve_df[1:2, ],
                    aes(x = u1, y = u2),
                    arrow = arrow(type = "open", length = arrowhead_length),
                    size = arrow_width) +
@@ -914,10 +932,12 @@ d6_cells$cell_type <- Idents(d6_cells)
 d12_cells$cell_type <- Idents(d12_cells)
 
 # mov_avg function copied from stackoverflow.com/a/4862334/6914552
-mov_avg <- function(x, n = 151){stats::filter(x, rep(1 / n, n), sides = 2)}
+mov_avg <- function(x, n = 151) {
+    stats::filter(x, rep(1 / n, n), sides = 2)
+}
 
-create_traj_df <- function (ptimes, name, cell_types) {
-    quantile_points <- seq(0.001,1,0.001)
+create_traj_df <- function(ptimes, name, cell_types) {
+    quantile_points <- seq(0.001, 1, 0.001)
     quantiled_data <- as.numeric(quantile(ptimes, quantile_points))
     sorted_cell_types <- cell_types[order(ptimes)]
     num_points <- length(ptimes)
@@ -933,17 +953,17 @@ create_traj_df <- function (ptimes, name, cell_types) {
 }
 
 traj_df_ctrl6d <- create_traj_df(sshot_ctrl6d_together$slingPseudotime_1, "Control-6D",
-                                 d6_cells[,ctrl6d_idx]$cell_type)
+                                 d6_cells[, ctrl6d_idx]$cell_type)
 traj_df_rocki6d <- create_traj_df(sshot_rocki6d_together$slingPseudotime_1, "ROCKi-6D",
-                                  d6_cells[,rocki6d_idx]$cell_type)
+                                  d6_cells[, rocki6d_idx]$cell_type)
 traj_df_6d <- rbind(traj_df_ctrl6d, traj_df_rocki6d)
 
 traj_df_ctrl12d <- create_traj_df(sshot_ctrl12d_together$slingPseudotime_1,
                                   "Control-12D",
-                                  d12_cells[,ctrl12d_idx]$cell_type)
+                                  d12_cells[, ctrl12d_idx]$cell_type)
 traj_df_rocki12d <- create_traj_df(sshot_rocki12d_together$slingPseudotime_1,
                                    "ROCKi-12D",
-                                   d12_cells[,rocki12d_idx]$cell_type)
+                                   d12_cells[, rocki12d_idx]$cell_type)
 traj_df_12d <- rbind(traj_df_ctrl12d, traj_df_rocki12d)
 
 obs_result_ptime_6d <- mean(abs(traj_df_ctrl6d$ptime - traj_df_rocki6d$ptime))
@@ -961,8 +981,8 @@ point_size <- 1
 create_traj_plot <- function(traj_df) {
     shade_alpha <- 0.2
 
-    basal_upper_lim <- quantile(traj_df[traj_df$cell_type == "Basal",]$ptime, 0.75)
-    ta_upper_lim <- quantile(traj_df[traj_df$cell_type == "TA",]$ptime, 0.95)
+    basal_upper_lim <- quantile(traj_df[traj_df$cell_type == "Basal", ]$ptime, 0.75)
+    ta_upper_lim <- quantile(traj_df[traj_df$cell_type == "TA", ]$ptime, 0.95)
 
     basal_color <- "#80C9EA"
     ta_color <- "#DD6E79"
@@ -983,7 +1003,7 @@ create_traj_plot <- function(traj_df) {
                     new_scale_color() +
                     geom_line(aes(linetype = sample_class), size = 0.4) +
                     scale_linetype_manual(values = c("solid", "dashed")) +
-                    scale_x_continuous(labels = scales::percent, limits = c(0,1)) +
+                    scale_x_continuous(labels = scales::percent, limits = c(0, 1)) +
                     ylim(c(0, max(traj_df$ptime))) +
                     xlab("Percentage through differentation process") +
                     ylab("Pseudotime") + traj_plot_margin_theme +
@@ -1011,7 +1031,7 @@ create_speed_plot <- function(traj_df) {
                   new_scale_color() +
                   geom_line(aes(linetype = sample_class), size = 0.4) +
                   scale_linetype_manual(values = c("solid", "dashed")) +
-                  scale_x_continuous(labels = scales::percent, limits = c(0,1)) +
+                  scale_x_continuous(labels = scales::percent, limits = c(0, 1)) +
                   xlab("Percentage through differentation process") +
                   ylab("Differentiation speed") + traj_plot_margin_theme +
                   diff_comparison_plots_theme + axis_text_theme
@@ -1096,22 +1116,29 @@ print(paste("95% confidence interval for difference in speed at 12D:",
 ## Expression of VIM in fibroblasts
 
 ```{r}
-skin_data.with_outliers <- skin_data.with_outliers %>% SCTransform() %>%
-                           CellCycleScoring(s.features = s.genes,
-                                            g2m.features = g2m.genes)
-skin_data.with_outliers$CC.difference <- skin_data.with_outliers$S.Score - skin_data.with_outliers$G2M.Score
-skin_data.with_outliers <- skin_data.with_outliers %>%
+skin_data_with_outliers <- skin_data_with_outliers %>%
+                           SCTransform() %>%
+                           CellCycleScoring(s.features = s_genes,
+                                            g2m.features = g2m_genes)
+skin_data_with_outliers$CC.difference <- skin_data_with_outliers$S.Score - skin_data_with_outliers$G2M.Score
+skin_data_with_outliers <- skin_data_with_outliers %>%
                            SCTransform(vars.to.regress = c("CC.difference")) %>%
-                           RunPCA(features = skin_data.with_outliers@assays$SCT@var.features,
+                           RunPCA(features = skin_data_with_outliers@assays$SCT@var.features,
                                   npcs = 50)
-skin_data.with_outliers$donor_idents <- sapply(skin_data.with_outliers$orig.ident,
-                                                         function(x) if (x %in% c("1","2","3","4")) {"1"}
-                                                         else if (x %in% c("5","6","7","8")) {"2"}
-                                                         else {"3"})
-skin_data.with_outliers <- skin_data.with_outliers %>%
+skin_data_with_outliers$donor_idents <- sapply(skin_data_with_outliers$orig.ident,
+                                                         function(x) {
+                                                             if (x %in% c("1", "2", "3", "4")) {
+                                                                 "1"
+                                                             } else if (x %in% c("5", "6", "7", "8")) {
+                                                                 "2"
+                                                             } else {
+                                                                 "3"
+                                                             }
+                                                         })
+skin_data_with_outliers <- skin_data_with_outliers %>%
                            RunHarmony("donor_idents", assay.use = "SCT") %>%
                            RunUMAP(dims = 1:50, reduction = "harmony")
-p <- FeaturePlot(skin_data.with_outliers, "VIM")
+p <- FeaturePlot(skin_data_with_outliers, "VIM")
 if (save_images) {
     save_tiff(p, "fig_s4a.tiff", width = 10, height = 8)
 }
@@ -1125,10 +1152,10 @@ p <- FeaturePlot(skin_data, features = c("KRT14", "VIM"), blend = TRUE,
                  split.by = "sample_class")
 blended_fp <- list()
 for (i in 1:4) {
-    q <- ggarrange(p[[((i-1)*4) + 1]] + umap_theme,
-                   p[[((i-1)*4) + 2]] + umap_theme,
-                   p[[((i-1)*4) + 3]] + umap_theme,
-                   p[[((i-1)*4) + 4]] + theme(plot.title = element_blank()),
+    q <- ggarrange(p[[((i - 1) * 4) + 1]] + umap_theme,
+                   p[[((i - 1) * 4) + 2]] + umap_theme,
+                   p[[((i - 1) * 4) + 3]] + umap_theme,
+                   p[[((i - 1) * 4) + 4]] + theme(plot.title = element_blank()),
                    nrow = 1, widths = c(2, 2, 2, 3))
     blended_fp[[i]] <- q
 }
