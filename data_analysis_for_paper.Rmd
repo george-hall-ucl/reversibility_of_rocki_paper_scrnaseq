@@ -184,6 +184,8 @@ of markers of melanocytes (MLANA, PMEL, MITF), mesenchymal cells (MTRNR2L6,
 MTRNR2L10, MTRNR2L7, MTRNR2L1, PRKAR2B, NR2F1), or fibroblasts (ACTG2, DLK1).
 
 ```{r}
+skin_data.with_outliers <- skin_data
+
 # Remove melanocytes
 skin_data <- subset(skin_data, subset = MLANA > 1 | PMEL > 1 | MITF > 1,
                     invert = T)
@@ -728,7 +730,11 @@ rocki12d_cells <- RunUMAP(rocki12d_cells, dims = 1:50, reduction = "harmony")
 prepare_cells_for_slingshot <- function(cells) {
     cells <- FindNeighbors(cells, reduction = "harmony", dims = 1:50)
     cells <- FindClusters(cells, resolution = 0.1)
+    if (cells@meta.data$sample_class == "Control-6D") {
+    cells <- RenameIdents(object = cells, "0" = "TA", "1" = "Basal", "2" = "TD")
+    } else {
     cells <- RenameIdents(object = cells, "0" = "TA", "1" = "TD", "2" = "Basal")
+    }
     
     return (cells)
 }
@@ -754,26 +760,27 @@ ctrl12d_cells.sce <- as.SingleCellExperiment(ctrl12d_cells)
 rocki12d_cells.sce <- as.SingleCellExperiment(rocki12d_cells)
 
 # Change UMAP values to make figures all similarly oriented
+reducedDim(ctrl6d_cells.sce, "UMAP")[,2] <- (-1) * reducedDims(ctrl6d_cells.sce)$UMAP[,2]
 reducedDim(rocki6d_cells.sce, "UMAP")[,2] <- (-1) * reducedDims(rocki6d_cells.sce)$UMAP[,2]
 reducedDim(ctrl12d_cells.sce, "UMAP")[,1] <- (-1) * reducedDims(ctrl12d_cells.sce)$UMAP[,1]
 
-sshot_6d <- slingshot(d6_cells.sce, d6_cells$seurat_clusters,
-                      reducedDim = "HARMONY", start.clus = "2")
-sshot_12d <- slingshot(d12_cells.sce, d12_cells$seurat_clusters,
-                       reducedDim = "HARMONY", start.clus = "2")
+sshot_6d <- slingshot(d6_cells.sce, Idents(d6_cells),
+                      reducedDim = "HARMONY", start.clus = "Basal")
+sshot_12d <- slingshot(d12_cells.sce, Idents(d12_cells),
+                       reducedDim = "HARMONY", start.clus = "Basal")
 
 sshot_ctrl6d_separate <- slingshot(ctrl6d_cells.sce,
-                                   ctrl6d_cells$seurat_clusters,
-                                   reducedDim = "UMAP", start.clus = "2")
+                                   Idents(ctrl6d_cells),
+                                   reducedDim = "UMAP", start.clus = "Basal")
 sshot_rocki6d_separate <- slingshot(rocki6d_cells.sce,
-                                    rocki6d_cells$seurat_clusters,
-                                    reducedDim = "UMAP", start.clus = "2")
+                                    Idents(rocki6d_cells),
+                                    reducedDim = "UMAP", start.clus = "Basal")
 sshot_ctrl12d_separate <- slingshot(ctrl12d_cells.sce,
-                                    ctrl12d_cells$seurat_clusters,
-                                    reducedDim = "UMAP", start.clus = "2")
+                                    Idents(ctrl12d_cells),
+                                    reducedDim = "UMAP", start.clus = "Basal")
 sshot_rocki12d_separate <- slingshot(rocki12d_cells.sce,
-                                     rocki12d_cells$seurat_clusters,
-                                     reducedDim = "UMAP", start.clus = "2")
+                                     Idents(rocki12d_cells),
+                                     reducedDim = "UMAP", start.clus = "Basal")
 
 umap_curve_6d <- slingCurves(embedCurves(sshot_6d,
                                          reducedDims(d6_cells.sce)$UMAP))[[1]]
@@ -1082,6 +1089,51 @@ diffs_quants_speed12d <- quantile((bootstrap_results$SpeedDiff12D - obs_result_s
 residuals_speed12d <- as.numeric(obs_result_speed_12d - diffs_quants_speed12d)
 print(paste("95% confidence interval for difference in speed at 12D:",
             paste(residuals_speed12d, collapse = " ")))
+```
+
+# Supplementary figures
+
+## Expression of VIM in fibroblasts
+
+```{r}
+skin_data.with_outliers <- skin_data.with_outliers %>% SCTransform() %>%
+                           CellCycleScoring(s.features = s.genes,
+                                            g2m.features = g2m.genes)
+skin_data.with_outliers@meta.data$CC.difference <- skin_data.with_outliers@meta.data$S.Score - skin_data.with_outliers@meta.data$G2M.Score
+skin_data.with_outliers <- skin_data.with_outliers %>%
+                           SCTransform(vars.to.regress = c("CC.difference")) %>%
+                           RunPCA(features = skin_data.with_outliers@assays$SCT@var.features,
+                                  npcs = 50)
+skin_data.with_outliers@meta.data$donor_idents <- sapply(skin_data.with_outliers@meta.data$orig.ident,
+                                                         function(x) if (x %in% c("1","2","3","4")) {"1"}
+                                                         else if (x %in% c("5","6","7","8")) {"2"}
+                                                         else {"3"})
+skin_data.with_outliers <- skin_data.with_outliers %>%
+                           RunHarmony("donor_idents", assay.use = "SCT") %>%
+                           RunUMAP(dims = 1:50, reduction = "harmony")
+p <- FeaturePlot(skin_data.with_outliers, "VIM")
+if (save_images) {
+    save_tiff(p, "fig_s4a.tiff", width = 10, height = 8)
+}
+```
+
+## Co-expression of VIM and KRT14
+
+```{r}
+skin_data <- RunUMAP(skin_data, reduction = "harmony", dims = 1:50)
+p <- FeaturePlot(skin_data, features = c("KRT14", "VIM"), blend = TRUE,
+                 split.by = "sample_class")
+blended_fp <- list()
+for (i in 1:4) {
+    q <- ggarrange(p[[((i-1)*4) + 1]] + umap_theme,
+                   p[[((i-1)*4) + 2]] + umap_theme,
+                   p[[((i-1)*4) + 3]] + umap_theme,
+                   p[[((i-1)*4) + 4]] + theme(plot.title = element_blank()),
+                   nrow = 1, widths = c(2, 2, 2, 3))
+    blended_fp[[i]] <- q
+}
+save_tiff(ggarrange(plotlist = blended_fp, ncol = 1), "fig_s4b.tiff",
+          width = 15, height = 15)
 ```
 
 
