@@ -2,3 +2,4 @@ SCINA.log
 3donor_filtered_feature_bc_matrix
 data_analysis_for_paper.html
 *.rds
+data_analysis_for_paper_files/*
