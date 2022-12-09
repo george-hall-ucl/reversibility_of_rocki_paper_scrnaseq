@@ -130,8 +130,8 @@ ncount_df <- data.frame(x = levels(Idents(cells$all)),
                                   50000, 50000, 40000, 40000))
 
 (ncount_vln <- vlnplot_limits(cells$all, "nCount_RNA",
-                               "Number of RNA\nmolecules per cell",
-                               ncount_df) + ylim(c(0, 100000)))
+                              "Number of RNA\nmolecules per cell",
+                              ncount_df) + ylim(c(0, 100000)))
 if (save_images) {
     save_tiff(ncount_vln, "fig_s4a.tiff")
 }
@@ -145,20 +145,20 @@ nfeature_df <- data.frame(x = levels(Idents(cells$all)),
                                7500, 7500, 6000, 6000))
 
 (nfeature_vln <- vlnplot_limits(cells$all, "nFeature_RNA",
-                               "Number of genes\ndetected per cell",
-                               nfeature_df))
+                                "Number of genes\ndetected per cell",
+                                nfeature_df))
 if (save_images) {
     save_tiff(nfeature_vln, "fig_s4b.tiff")
 }
 
 pct_mito_df <- data.frame(x = levels(Idents(cells$all)),
-                        lower = c(rep(2, 8), rep(3, 4)),
-                        upper = c(rep(10, 8), rep(12, 4)))
+                          lower = c(rep(2, 8), rep(3, 4)),
+                          upper = c(rep(10, 8), rep(12, 4)))
 
 (pct_mito_vln <- vlnplot_limits(cells$all, "percent.mt",
-                               paste0("Percentage of mitochrondrial\n",
-                                      "DNA detected per cell"),
-                               pct_mito_df) + ylim(c(0, 20)))
+                                paste0("Percentage of mitochrondrial\n",
+                                       "DNA detected per cell"),
+                                pct_mito_df) + ylim(c(0, 20)))
 if (save_images) {
     save_tiff(pct_mito_vln, "fig_s4c.tiff")
 }
@@ -563,7 +563,7 @@ if (save_images) {
 }
 
 cell_type_df_6d <- data.frame(CellType = cells$d6$cell_type_pred,
-                           Class = cells$d6$sample_class)
+                              Class = cells$d6$sample_class)
 cell_type_df_6d$Class <- factor(cell_type_df_6d$Class,
                                 levels = c("Control-6D", "ROCKi-6D",
                                            "Control-12D", "ROCKi-12D"))
@@ -597,7 +597,7 @@ if (save_images) {
 }
 
 cell_type_df_12d <- data.frame(CellType = cells$d12$cell_type_pred,
-                           Class = cells$d12$sample_class)
+                               Class = cells$d12$sample_class)
 cell_type_df_12d$Class <- factor(cell_type_df_12d$Class,
                                  levels = c("Control-6D", "ROCKi-6D",
                                             "Control-12D", "ROCKi-12D"))
@@ -721,10 +721,8 @@ create_dotplot <- function(cells) {
 }
 
 cells$all$sample_class_space <- cells$all$sample_class
-levels(cells$all$sample_class_space) <- c("Control-6D ",
-                                                    "ROCKi-6D ",
-                                                    "Control-6D 6D ",
-                                                    "ROCKi-6D 6D ")
+levels(cells$all$sample_class_space) <- c("Control-6D ", "ROCKi-6D ",
+                                          "Control-6D 6D ", "ROCKi-6D 6D ")
 
 holo_cells <- subset(cells$all, subset = cell_type_pred == "Basal")
 ta_cells <- subset(cells$all, subset = cell_type_pred == "TA")
@@ -764,14 +762,15 @@ cells$rocki6d <- RunUMAP(cells$rocki6d, dims = 1:50, reduction = "harmony")
 cells$ctrl12d <- RunUMAP(cells$ctrl12d, dims = 1:50, reduction = "harmony")
 cells$rocki12d <- RunUMAP(cells$rocki12d, dims = 1:50, reduction = "harmony")
 
-
 prepare_cells_for_slingshot <- function(cells) {
     cells <- FindNeighbors(cells, reduction = "harmony", dims = 1:50)
     cells <- FindClusters(cells, resolution = 0.1)
     if (cells$sample_class == "Control-6D") {
-    cells <- RenameIdents(object = cells, "0" = "TA", "1" = "Basal", "2" = "TD")
+        cells <- RenameIdents(object = cells,
+                              "0" = "TA", "1" = "Basal", "2" = "TD")
     } else {
-    cells <- RenameIdents(object = cells, "0" = "TA", "1" = "TD", "2" = "Basal")
+        cells <- RenameIdents(object = cells,
+                              "0" = "TA", "1" = "TD", "2" = "Basal")
     }
 
     return(cells)
@@ -1063,7 +1062,6 @@ if (save_images) {
     save_tiff(traj_plot_12d_no_legend, "fig_7f.tiff", width = 10, height = 8)
 }
 
-
 create_speed_plot <- function(traj_df) {
     speed_plot <- ggplot(traj_df,
                          aes(x = pct, y = diff, group = sample_class)) +
@@ -1082,7 +1080,6 @@ create_speed_plot <- function(traj_df) {
     return(speed_plot)
 }
 
-
 (speed_plot_6d <- create_speed_plot(traj_df_6d) +
                   theme(legend.position = "none"))
 (speed_plot_12d <- create_speed_plot(traj_df_12d) +
@@ -1092,7 +1089,6 @@ if (save_images) {
     save_tiff(speed_plot_6d, "fig_s3a.tiff", width = 14, height = 8)
     save_tiff(speed_plot_12d, "fig_s3b.tiff", width = 14, height = 8)
 }
-
 
 legend_plot <- ggplot(traj_df_6d,
                       aes(x = pct, y = ptime, group = sample_class)) +
@@ -1129,7 +1125,7 @@ if (save_images) {
 bs_out <- read.table("trajectory_comparison_results.txt")
 bs_out <- bs_out[, c(3, 4, 5, 6)]
 colnames(bs_out) <- c("TrajDiff6D", "TrajDiff12D", "SpeedDiff6D",
-                                 "SpeedDiff12D")
+                      "SpeedDiff12D")
 
 diffs_quants_traj6d <- quantile((bs_out$TrajDiff6D - obs_result_ptime_6d),
                                 alpha_vals)
