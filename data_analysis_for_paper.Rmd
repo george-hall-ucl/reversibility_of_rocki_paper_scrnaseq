@@ -789,24 +789,24 @@ cells$rocki12d <- prepare_cells_for_slingshot(cells$rocki12d)
 ```{r}
 colors <- colorRampPalette(brewer.pal(11, "Spectral")[-6])(100)
 
-d6_cells_sce <- as.SingleCellExperiment(cells$d6)
-d12_cells_sce <- as.SingleCellExperiment(cells$d12)
-ctrl6d_cells_sce <- as.SingleCellExperiment(cells$ctrl6d)
+cells$d6_sce <- as.SingleCellExperiment(cells$d6)
+cells$d12_sce <- as.SingleCellExperiment(cells$d12)
+cells$ctrl6d_sce <- as.SingleCellExperiment(cells$ctrl6d)
 cells$rocki6d_sce <- as.SingleCellExperiment(cells$rocki6d)
 cells$ctrl12d_sce <- as.SingleCellExperiment(cells$ctrl12d)
 cells$rocki12d_sce <- as.SingleCellExperiment(cells$rocki12d)
 
 # Change UMAP values to make figures all similarly oriented
-reducedDim(ctrl6d_cells_sce, "UMAP")[, 2] <- (-1) * reducedDims(ctrl6d_cells_sce)$UMAP[, 2]
+reducedDim(cells$ctrl6d_sce, "UMAP")[, 2] <- (-1) * reducedDims(cells$ctrl6d_sce)$UMAP[, 2]
 reducedDim(cells$rocki6d_sce, "UMAP")[, 2] <- (-1) * reducedDims(cells$rocki6d_sce)$UMAP[, 2]
 reducedDim(cells$ctrl12d_sce, "UMAP")[, 1] <- (-1) * reducedDims(cells$ctrl12d_sce)$UMAP[, 1]
 
-sshot_6d <- slingshot(d6_cells_sce, Idents(cells$d6),
+sshot_6d <- slingshot(cells$d6_sce, Idents(cells$d6),
                       reducedDim = "HARMONY", start.clus = "Basal")
-sshot_12d <- slingshot(d12_cells_sce, Idents(cells$d12),
+sshot_12d <- slingshot(cells$d12_sce, Idents(cells$d12),
                        reducedDim = "HARMONY", start.clus = "Basal")
 
-sshot_ctrl6d_separate <- slingshot(ctrl6d_cells_sce,
+sshot_ctrl6d_separate <- slingshot(cells$ctrl6d_sce,
                                    Idents(cells$ctrl6d),
                                    reducedDim = "UMAP", start.clus = "Basal")
 sshot_rocki6d_separate <- slingshot(cells$rocki6d_sce,
@@ -820,9 +820,9 @@ sshot_rocki12d_separate <- slingshot(cells$rocki12d_sce,
                                      reducedDim = "UMAP", start.clus = "Basal")
 
 umap_curve_6d <- slingCurves(embedCurves(sshot_6d,
-                                         reducedDims(d6_cells_sce)$UMAP))[[1]]
+                                         reducedDims(cells$d6_sce)$UMAP))[[1]]
 umap_curve_12d <- slingCurves(embedCurves(sshot_12d,
-                                          reducedDims(d12_cells_sce)$UMAP))[[1]]
+                                          reducedDims(cells$d12_sce)$UMAP))[[1]]
 
 umap_curve_ctrl6d <- slingCurves(sshot_ctrl6d_separate)[[1]]
 umap_curve_rocki6d <- slingCurves(sshot_rocki6d_separate)[[1]]
@@ -839,19 +839,19 @@ sshot_rocki6d_together <- sshot_6d[, rocki6d_idx]
 sshot_ctrl12d_together <- sshot_12d[, ctrl12d_idx]
 sshot_rocki12d_together <- sshot_12d[, rocki12d_idx]
 
-xmin_sep <- min(reducedDim(ctrl6d_cells_sce, "UMAP")[, 1],
+xmin_sep <- min(reducedDim(cells$ctrl6d_sce, "UMAP")[, 1],
                 reducedDim(cells$rocki6d_sce, "UMAP")[, 1],
                 reducedDim(cells$ctrl12d_sce, "UMAP")[, 1],
                 reducedDim(cells$rocki12d_sce, "UMAP")[, 1])
-xmax_sep <- max(reducedDim(ctrl6d_cells_sce, "UMAP")[, 1],
+xmax_sep <- max(reducedDim(cells$ctrl6d_sce, "UMAP")[, 1],
                 reducedDim(cells$rocki6d_sce, "UMAP")[, 1],
                 reducedDim(cells$ctrl12d_sce, "UMAP")[, 1],
                 reducedDim(cells$rocki12d_sce, "UMAP")[, 1])
-ymin_sep <- min(reducedDim(ctrl6d_cells_sce, "UMAP")[, 2],
+ymin_sep <- min(reducedDim(cells$ctrl6d_sce, "UMAP")[, 2],
                 reducedDim(cells$rocki6d_sce, "UMAP")[, 2],
                 reducedDim(cells$ctrl12d_sce, "UMAP")[, 2],
                 reducedDim(cells$rocki12d_sce, "UMAP")[, 2])
-ymax_sep <- max(reducedDim(ctrl6d_cells_sce, "UMAP")[, 2],
+ymax_sep <- max(reducedDim(cells$ctrl6d_sce, "UMAP")[, 2],
                 reducedDim(cells$rocki6d_sce, "UMAP")[, 2],
                 reducedDim(cells$ctrl12d_sce, "UMAP")[, 2],
                 reducedDim(cells$rocki12d_sce, "UMAP")[, 2])
