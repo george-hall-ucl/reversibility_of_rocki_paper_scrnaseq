@@ -653,10 +653,8 @@ for (i in list(c("d6", 6), c("d12", 12))) {
 }
 ```
 
-```{r fig.show = 'hide', results = TRUE}
-signatures <- preprocess.signatures("celltype_markers_basal_ta_td.csv")
-
-create_dotplot <- function(cells) {
+```{r fig.show = "hide", results = "markup"}
+create_dotplot <- function(cells, signatures) {
     dp <- DotPlot(cells, group.by = "sample_class_space",
                   features = list("Holoclone" = signatures$Basal,
                                   "Mero-/Paraclone" = signatures$TA,
@@ -683,7 +681,7 @@ for (i in list(c("holo", "fig_6g.tiff"), c("ta", "fig_s2a.tiff"),
                c("td", "fig_s2b.tiff"))) {
     s <- i[1]
     out_name <- i[2]
-    dp <- create_dotplot(cells[[s]])
+    dp <- create_dotplot(cells[[s]], signatures)
     print(dp)
 
     if (save_images) {
