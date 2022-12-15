@@ -17,7 +17,7 @@ Copyright University College London 2020-2022. This software is licenced under
 the terms of the GNU GENERAL PUBLIC LICENSE Version 3. See COPYING.txt for the
 licence details.
 
-```{r results = 'hide', message = FALSE, warning = FALSE}
+```{r results = "hide", message = FALSE, warning = FALSE}
 knitr::opts_chunk$set(results = "hide", message = FALSE, warning = FALSE,
                       fig.align = "center")
 # Tidyverse
@@ -502,8 +502,9 @@ classify cells as either basal, transient amplifying (TA), or terminal
 differentiated (TD), since these are the classes for which Enzo et al. provide
 distinct markers.
 
-```{r results = 'hold'}
-(signatures <- preprocess.signatures("celltype_markers_basal_ta_td.csv"))
+```{r results = "markup"}
+signatures <- preprocess.signatures("celltype_markers_basal_ta_td.csv")
+print(signatures)
 
 for (s in c("all", "d6", "d12")) {
     preds <- SCINA(as.matrix(GetAssayData(cells[[s]])), signatures)$cell_labels
@@ -592,7 +593,7 @@ of cell types, whereas this difference reduces at 12D.
 We now compute 95% confidence intervals around the differences in cell type
 proportions at both timepoints.
 
-```{r, results = 'markup'}
+```{r, results = "markup"}
 prop_table_cell_type <- function(x) {
     return(prop.table(table(factor(x, levels = c("Basal", "TA", "TD",
                                                  "unknown")))))
@@ -1036,7 +1037,7 @@ if (save_images) {
 
 ## Generating confidence intervals
 
-```{r results = 'markup'}
+```{r results = "markup"}
 # Generate bootstrapped data as in "experiment_code_trajectories.R" and save
 # the outputs as "trajectory_comparison_results.txt"
 
@@ -1147,7 +1148,7 @@ $(document).ready(function() {
 ## Package versions
 
 <!-- https://stackoverflow.com/a/36777618 -->
-```{r results = TRUE}
+```{r results = "markup"}
 installed.packages()[names(sessionInfo()$otherPkgs), "Version"]
 ```
 
