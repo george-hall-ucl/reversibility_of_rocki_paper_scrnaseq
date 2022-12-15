@@ -299,8 +299,9 @@ cells$d6 <- subset(cells$all,
 cells$d12 <- subset(cells$all,
                     subset = sample_class %in% c("Control-12D", "ROCKi-12D"))
 
-cells$d6 <- RunUMAP(cells$d6, dims = 1:50, reduction = "harmony")
-cells$d12 <- RunUMAP(cells$d12, dims = 1:50, reduction = "harmony")
+for (s in c("d6", "d12")) {
+    cells[[s]] <- RunUMAP(cells[[s]], dims = 1:50, reduction = "harmony")
+}
 
 umap_theme <- theme(axis.line = element_blank(), axis.text.x = element_blank(),
                     axis.text.y = element_blank(), axis.ticks = element_blank(),
@@ -327,7 +328,7 @@ legend_plot <- ggplot(data.frame(class = as.character(seq_len(length(labels))),
                                                       size = 0.5,
                                                       linetype = "solid")) +
                guides(colour = guide_legend(override.aes = list(size = 2)))
-umap_legend <- as_ggplot(get_legend(legend_plot, "left"))
+(umap_legend <- as_ggplot(get_legend(legend_plot, "left")))
 if (save_images) {
     save_tiff(umap_legend, "umap_legend.tiff")
 }
@@ -341,14 +342,14 @@ plot_treatment_class_umap <- function(cells) {
     return(p)
 }
 
-(umap_d6 <- plot_treatment_class_umap(cells$d6))
-if (save_images) {
-    save_tiff(umap_d6, "fig_5a.tiff")
-}
-
-(umap_d12 <- plot_treatment_class_umap(cells$d12))
-if (save_images) {
-    save_tiff(umap_d12, "fig_5b.tiff")
+for (i in list(c("d6", "fig_5a.tiff"), c("d12", "fig_5b.tiff"))) {
+    s <- i[1]
+    out_name <- i[2]
+    umap <- plot_treatment_class_umap(cells[[s]])
+    print(umap)
+    if (save_images) {
+        save_tiff(umap, out_name)
+    }
 }
 ```
 
@@ -360,31 +361,7 @@ using DAseq.
 
 ## Differential abundance testing using DAseq
 
-```{r}
-daseq_out_6d <- getDAcells(Embeddings(object = cells$d6, reduction = "harmony"),
-                           cell.labels = as.character(cells$d6$sample_class),
-                           labels.1 = c("Control-6D"),
-                           labels.2 = c("ROCKi-6D"),
-                           plot.embedding = Embeddings(object = cells$d6,
-                                                       reduction = "umap"))
-
-daseq_out_12d <- getDAcells(Embeddings(object = cells$d12,
-                                       reduction = "harmony"),
-                            cell.labels = as.character(cells$d12$sample_class),
-                            labels.1 = c("Control-12D"),
-                            labels.2 = c("ROCKi-12D"),
-                            plot.embedding = Embeddings(object = cells$d12,
-                                                        reduction = "umap"))
-
-daseq_legend <- as_ggplot(get_legend(daseq_out_12d$pred.plot +
-                                     umap_theme +
-                                     theme(legend.position = "top",
-                                           legend.text = element_blank())))
-
-if (save_images) {
-    save_tiff(daseq_legend, "daseq_legend.tiff")
-}
-
+```{r, results = "markup"}
 create_daseq_umap <- function(daseq_out) {
     daseq_umap <- daseq_out$pred.plot + umap_theme +
                   theme(legend.position = "none")
@@ -392,29 +369,41 @@ create_daseq_umap <- function(daseq_out) {
     return(daseq_umap)
 }
 
-(daseq_umap_6d <- create_daseq_umap(daseq_out_6d))
-if (save_images) {
-    save_tiff(daseq_umap_6d, "fig_5c.tiff")
+for (i in list(c("d6", 6, "Control-6D", "ROCKi-6D", "fig_5c.tiff"),
+               c("d12", 12, "Control-12D", "ROCKi-12D", "fig_5d.tiff"))) {
+    s <- i[1]
+    num_days <- i[2]
+    l1 <- i[3]
+    l2 <- i[4]
+    out_name <- i[5]
+
+    res <- getDAcells(Embeddings(object = cells[[s]], reduction = "harmony"),
+                      cell.labels = as.character(cells[[s]]$sample_class),
+                      labels.1 = c(l1), labels.2 = c(l2),
+                      plot.embedding = Embeddings(object = cells[[s]],
+                                                  reduction = "umap"))
+
+    num_da_cells <- length(c(res$da.down, res$da.up))
+    proportion_da <- num_da_cells / length(colnames(cells[[s]]))
+    print(paste0("Proportion of cells in differentially abundant regions at ",
+                 num_days, "D: ", proportion_da))
+
+    daseq_umap <- create_daseq_umap(res)
+    print(daseq_umap)
+    if (save_images) {
+        save_tiff(daseq_umap, out_name)
+    }
 }
 
-(daseq_umap_12d <- create_daseq_umap(daseq_out_12d))
+(daseq_legend <- as_ggplot(get_legend(res$pred.plot +
+                                      umap_theme +
+                                      theme(legend.position = "top",
+                                            legend.text = element_blank()))))
+
 if (save_images) {
-    save_tiff(daseq_umap_12d, "fig_5d.tiff")
+    save_tiff(daseq_legend, "daseq_legend.tiff")
 }
-
-num_da_cells_6d <- length(c(daseq_out_6d$da.down, daseq_out_6d$da.up))
-proportion_da_6d <- num_da_cells_6d / length(colnames(cells$d6))
-num_da_cells_12d <- length(c(daseq_out_12d$da.down, daseq_out_12d$da.up))
-proportion_da_12d <- num_da_cells_12d / length(colnames(cells$d12))
 ```
-
-```{r results = 'markup'}
-print(paste("Proportion of cells in differentially abundant regions at 6D:",
-            proportion_da_6d))
-print(paste("Proportion of cells in differentially abundant regions at 12D:",
-            proportion_da_12d))
-```
-
 
 # Differential Expression Analysis
 
@@ -422,15 +411,7 @@ We carried out differential expression analysis of treated and control cells at
 6D and 12D using the standard Wilcoxon rank sum test in Seurat. 
 
 ```{r out.width = "100%"}
-Idents(cells$all) <- cells$all$sample_class
-marks_6d <- FindMarkers(cells$all, ident.1 = "ROCKi-6D",
-                        ident.2 = "Control-6D")
-marks_12d <- FindMarkers(cells$all, ident.1 = "ROCKi-12D",
-                         ident.2 = "Control-12D")
-
-not_sig_color <- "#4D4D4D"
-
-vol_plot <- function(marks) {
+vol_plot <- function(marks, not_sig_color) {
     marks$p_val_adj_neg_log <- (-1) * log10(marks$p_val_adj)
     marks$p_val_adj_neg_log[is.infinite(marks$p_val_adj_neg_log)] <- 300
     sig_marks_pos <- subset(marks, avg_log2FC > 1)
@@ -471,9 +452,22 @@ vol_plot <- function(marks) {
     return(plot)
 }
 
-(vol_6d <- vol_plot(marks_6d))
-if (save_images) {
-    save_tiff(vol_6d, "fig_5e.tiff", height = 5, width = 10)
+Idents(cells$all) <- cells$all$sample_class
+not_sig_color <- "#4D4D4D"
+
+for (i in list(c("ROCKi-6D", "Control-6D", "fig_5e.tiff"),
+               c("ROCKi-12D", "Control-12D", "fig_5f.tiff"))) {
+    id1 <- i[1]
+    id2 <- i[2]
+    out_name <- i[3]
+
+    marks <- FindMarkers(cells$all, ident.1 = id1, ident.2 = id2)
+    vol <- vol_plot(marks, not_sig_color)
+    print(vol)
+
+    if (save_images) {
+        save_tiff(vol, out_name, height = 5, width = 10)
+    }
 }
 
 labels <- c(bquote(bold(Log["2"]~"fold change ≤ -1")),
@@ -494,14 +488,9 @@ legend_plot <- ggplot(data.frame(class = as.character(seq_len(length(labels))),
                      legend.margin = margin(unit(c(0, 0, 0, 0), "cm"))) +
                guides(colour = guide_legend(override.aes = list(size = 2)))
 
-volplot_legend <- as_ggplot(get_legend(legend_plot, "right"))
+(volplot_legend <- as_ggplot(get_legend(legend_plot, "right")))
 if (save_images) {
     save_tiff(volplot_legend, "volplot_legend.tiff")
-}
-
-(vol_12d <- vol_plot(marks_12d))
-if (save_images) {
-    save_tiff(vol_12d, "fig_5f.tiff", height = 5, width = 10)
 }
 ```
 
@@ -516,17 +505,16 @@ distinct markers.
 ```{r results = 'hold'}
 (signatures <- preprocess.signatures("celltype_markers_basal_ta_td.csv"))
 
-cells$all$cell_type_pred <- SCINA(as.matrix(GetAssayData(cells$all)),
-                                  signatures)$cell_labels
-cells$d6$cell_type_pred <- SCINA(as.matrix(GetAssayData(cells$d6)),
-                                 signatures)$cell_labels
-cells$d12$cell_type_pred <- SCINA(as.matrix(GetAssayData(cells$d12)),
-                                  signatures)$cell_labels
+for (s in c("all", "d6", "d12")) {
+    preds <- SCINA(as.matrix(GetAssayData(cells[[s]])), signatures)$cell_labels
+    preds <- factor(preds, levels = c("Basal", "TA", "TD", "unknown"))
+    cells[[s]]$cell_type_pred <- preds
+}
 
-cells$d6$cell_type_pred <- factor(cells$d6$cell_type_pred,
-                                  levels = c("Basal", "TA", "TD", "unknown"))
-cells$d12$cell_type_pred <- factor(cells$d12$cell_type_pred,
-                                   levels = c("Basal", "TA", "TD", "unknown"))
+cells$ctrl6d <- subset(cells$d6, treatment_class == "Control")
+cells$rocki6d <- subset(cells$d6, treatment_class == "ROCKi")
+cells$ctrl12d <- subset(cells$d12, treatment_class == "Control")
+cells$rocki12d <- subset(cells$d12, treatment_class == "ROCKi")
 
 create_cell_type_umap <- function(cells) {
     # Force factors back into correct order as this inexplicably disappears
@@ -545,28 +533,16 @@ create_cell_type_umap <- function(cells) {
     return(p)
 }
 
-cells$ctrl6d <- subset(cells$d6, treatment_class == "Control")
-cells$rocki6d <- subset(cells$d6, treatment_class == "ROCKi")
-cells$ctrl12d <- subset(cells$d12, treatment_class == "Control")
-cells$rocki12d <- subset(cells$d12, treatment_class == "ROCKi")
-
-cell_type_umap_ctrl6d <- create_cell_type_umap(cells$ctrl6d)
-cell_type_umap_rocki6d <- create_cell_type_umap(cells$rocki6d)
-cell_type_umap_ctrl12d <- create_cell_type_umap(cells$ctrl12d)
-cell_type_umap_rocki12d <- create_cell_type_umap(cells$rocki12d)
-
-if (save_images) {
-    save_tiff(cell_type_umap_ctrl6d, "fig_6a.tiff")
-    save_tiff(cell_type_umap_ctrl12d, "fig_6b.tiff")
-    save_tiff(cell_type_umap_rocki6d, "fig_6c.tiff")
-    save_tiff(cell_type_umap_rocki12d, "fig_6d.tiff")
+for (i in list(c("ctrl6d", "fig_6a.tiff"), c("rocki6d", "fig_6c.tiff"),
+               c("ctrl12d", "fig_6b.tiff"), c("rocki12d", "fig_6d.tiff"))) {
+    s <- i[1]
+    out_name <- i[2]
+    cell_type_umap <- create_cell_type_umap(cells[[s]])
+    print(cell_type_umap)
+    if (save_images) {
+        save_tiff(cell_type_umap, out_name)
+    }
 }
-
-cell_type_df_6d <- data.frame(CellType = cells$d6$cell_type_pred,
-                              Class = cells$d6$sample_class)
-cell_type_df_6d$Class <- factor(cell_type_df_6d$Class,
-                                levels = c("Control-6D", "ROCKi-6D",
-                                           "Control-12D", "ROCKi-12D"))
 
 cell_type_prop_graph <- function(df, names) {
     p <- ggplot(df, aes(x = Class, fill = CellType)) +
@@ -586,29 +562,25 @@ cell_type_prop_graph <- function(df, names) {
     return(p)
 }
 
-cell_type_prop_graph_6d <- cell_type_prop_graph(cell_type_df_6d,
-                                                c("Control-6D ", "ROCKi-6D "))
-(cell_type_prop_graph_6d_no_legend <- cell_type_prop_graph_6d +
-                                      theme(legend.position = "none"))
+for (i in list(c("d6", 6, "fig_6e.tiff"), c("d12", 12, "fig_6f.tiff"))) {
+    s <- i[1]
+    num_days <- i[2]
+    out_name <- i[3]
 
-if (save_images) {
-    save_tiff(cell_type_prop_graph_6d_no_legend, "fig_6e.tiff", width = 6,
-              height = 6)
-}
+    s1 <- paste0("Control-", num_days, "D")
+    s2 <- paste0("ROCKi-", num_days, "D")
+    cell_type_df <- data.frame(CellType = cells[[s]]$cell_type_pred,
+                               Class = cells[[s]]$sample_class)
+    cell_type_df$Class <- factor(cell_type_df$Class,
+                                 levels = c(s1, s2))
+    prop_graph <- cell_type_prop_graph(cell_type_df,
+                                       c(paste0(s1, " "), paste0(s2, " ")))
+    prop_graph_no_legend <- prop_graph + theme(legend.position = "none")
+    print(prop_graph_no_legend)
 
-cell_type_df_12d <- data.frame(CellType = cells$d12$cell_type_pred,
-                               Class = cells$d12$sample_class)
-cell_type_df_12d$Class <- factor(cell_type_df_12d$Class,
-                                 levels = c("Control-6D", "ROCKi-6D",
-                                            "Control-12D", "ROCKi-12D"))
-cell_type_prop_graph_12d <- cell_type_prop_graph(cell_type_df_12d,
-                                                 c("Control-6D 6D ",
-                                                   "ROCKi-6D 6D "))
-(cell_type_prop_graph_12d_no_legend <- cell_type_prop_graph_12d +
-                                       theme(legend.position = "none"))
-if (save_images) {
-    save_tiff(cell_type_prop_graph_12d_no_legend, "fig_6f.tiff", width = 6,
-              height = 6)
+    if (save_images) {
+        save_tiff(prop_graph_no_legend, out_name, width = 6, height = 6)
+    }
 }
 ```
 
@@ -620,7 +592,7 @@ of cell types, whereas this difference reduces at 12D.
 We now compute 95% confidence intervals around the differences in cell type
 proportions at both timepoints.
 
-```{r}
+```{r, results = 'markup'}
 prop_table_cell_type <- function(x) {
     return(prop.table(table(factor(x, levels = c("Basal", "TA", "TD",
                                                  "unknown")))))
@@ -648,58 +620,37 @@ calc_cell_type_props <- function(cell_types, treatment_classes) {
 # Set random seed for reproducibility
 set.seed(1234)
 
-obs_total_prop_diff_6d <- calc_cell_type_props(cells$d6$cell_type_pred,
-                                               cells$d6$treatment_class)
-obs_total_prop_diff_12d <- calc_cell_type_props(cells$d12$cell_type_pred,
-                                                cells$d12$treatment_class)
+for (i in list(c("d6", 6), c("d12", 12))) {
+    s <- i[1]
+    num_days <- i[2]
 
-prop_diffs_6d <- c() # Store results
-prop_diffs_12d <- c() # Store results
+    obs_total_prop_diff <- calc_cell_type_props(cells[[s]]$cell_type_pred,
+                                                cells[[s]]$treatment_class)
+    prop_diffs <- c()
+    for (r in 1:10000) {
+        # Generate resample indices
+        c_idx <- sample(which(cells[[s]]$treatment_class == "Control"),
+                          length(which(cells[[s]]$treatment_class == "Control")),
+                          replace = TRUE)
+        r_idx <- sample(which(cells[[s]]$treatment_class == "ROCKi"),
+                          length(which(cells[[s]]$treatment_class == "ROCKi")) - 1,
+                          replace = TRUE)
+        idx <- c(c_idx, r_idx)
 
-for (r in 1:10000) {
-    # Generate resample indices
-    c6d_idx <- sample(which(cells$d6$treatment_class == "Control"),
-                      length(which(cells$d6$treatment_class == "Control")),
-                      replace = TRUE)
-    r6d_idx <- sample(which(cells$d6$treatment_class == "ROCKi"),
-                      length(which(cells$d6$treatment_class == "ROCKi")) - 1,
-                      replace = TRUE)
-    d6_idx <- c(c6d_idx, r6d_idx)
+        # Find cell type and treatment class labels for this resample
+        cell_types <- cells[[s]]$cell_type_pred[idx]
+        treat_classes <- cells[[s]]$treatment_class[idx]
 
-    c12d_idx <- sample(which(cells$d12$treatment_class == "Control"),
-                      length(which(cells$d12$treatment_class == "Control")),
-                      replace = TRUE)
-    r12d_idx <- sample(which(cells$d12$treatment_class == "ROCKi"),
-                      length(which(cells$d12$treatment_class == "ROCKi")) - 1,
-                      replace = TRUE)
-    d12_idx <- c(c12d_idx, r12d_idx)
+        total_prop_diff <- calc_cell_type_props(cell_types, treat_classes)
+        prop_diffs <- c(prop_diffs, total_prop_diff)
+    }
 
-    # Find cell type and treatment class labels for this resample
-    d6_cell_type <- cells$d6$cell_type_pred[d6_idx]
-    d6_treat_class <- cells$d6$treatment_class[d6_idx]
-
-    d12_cell_type <- cells$d12$cell_type_pred[d12_idx]
-    d12_treat_class <- cells$d12$treatment_class[d12_idx]
-
-    total_prop_diff <- calc_cell_type_props(d6_cell_type, d6_treat_class)
-    prop_diffs_6d <- c(prop_diffs_6d, total_prop_diff)
-
-    total_prop_diff <- calc_cell_type_props(d12_cell_type, d12_treat_class)
-    prop_diffs_12d <- c(prop_diffs_12d, total_prop_diff)
+    alpha_vals <- c(0.975, 0.025)
+    residuals <- prop_diffs - obs_total_prop_diff
+    print(paste0("95% confidence interval for total absolute difference in",
+                 "cell type proportions at ", num_days, "D:"))
+    print(as.numeric(obs_total_prop_diff - quantile(residuals, alpha_vals)))
 }
-```
-
-```{r results = 'markup'}
-alpha_vals <- c(0.975, 0.025)
-residuals_6d <- prop_diffs_6d - obs_total_prop_diff_6d
-print(paste0("95% confidence interval for total absolute difference in",
-             "cell type proportions at 6D:"))
-print(as.numeric(obs_total_prop_diff_6d - quantile(residuals_6d, alpha_vals)))
-
-residuals_12d <- prop_diffs_12d - obs_total_prop_diff_12d
-print(paste0("95% confidence interval for total absolute difference in",
-             "cell type proportions at 12D:"))
-print(as.numeric(obs_total_prop_diff_12d - quantile(residuals_12d, alpha_vals)))
 ```
 
 ```{r fig.show = 'hide', results = TRUE}
@@ -724,18 +675,20 @@ cells$all$sample_class_space <- cells$all$sample_class
 levels(cells$all$sample_class_space) <- c("Control-6D ", "ROCKi-6D ",
                                           "Control-6D 6D ", "ROCKi-6D 6D ")
 
-holo_cells <- subset(cells$all, subset = cell_type_pred == "Basal")
-ta_cells <- subset(cells$all, subset = cell_type_pred == "TA")
-td_cells <- subset(cells$all, subset = cell_type_pred == "TD")
+cells$holo <- subset(cells$all, subset = cell_type_pred == "Basal")
+cells$ta <- subset(cells$all, subset = cell_type_pred == "TA")
+cells$td <- subset(cells$all, subset = cell_type_pred == "TD")
 
-(holo_dp <- create_dotplot(holo_cells))
-(ta_dp <- create_dotplot(ta_cells))
-(td_dp <- create_dotplot(td_cells))
+for (i in list(c("holo", "fig_6g.tiff"), c("ta", "fig_s2a.tiff"),
+               c("td", "fig_s2b.tiff"))) {
+    s <- i[1]
+    out_name <- i[2]
+    dp <- create_dotplot(cells[[s]])
+    print(dp)
 
-if (save_images) {
-    save_tiff(holo_dp, "fig_6g.tiff", width = 20, height = 8)
-    save_tiff(ta_dp, "fig_s2a.tiff", width = 20, height = 8)
-    save_tiff(td_dp, "fig_s2b.tiff", width = 20, height = 8)
+    if (save_images) {
+        save_tiff(dp, out_name, width = 20, height = 8)
+    }
 }
 ```
 
@@ -757,15 +710,14 @@ cells$rocki6d <- subset(cells$d6, treatment_class == "ROCKi")
 cells$ctrl12d <- subset(cells$d12, treatment_class == "Control")
 cells$rocki12d <- subset(cells$d12, treatment_class == "ROCKi")
 
-cells$ctrl6d <- RunUMAP(cells$ctrl6d, dims = 1:50, reduction = "harmony")
-cells$rocki6d <- RunUMAP(cells$rocki6d, dims = 1:50, reduction = "harmony")
-cells$ctrl12d <- RunUMAP(cells$ctrl12d, dims = 1:50, reduction = "harmony")
-cells$rocki12d <- RunUMAP(cells$rocki12d, dims = 1:50, reduction = "harmony")
+for (s in c("ctrl6d", "rocki6d", "ctrl12d", "rocki12d")) {
+    cells[[s]] <- RunUMAP(cells[[s]], dims = 1:50, reduction = "harmony")
+}
 
 prepare_cells_for_slingshot <- function(cells) {
     cells <- FindNeighbors(cells, reduction = "harmony", dims = 1:50)
     cells <- FindClusters(cells, resolution = 0.1)
-    if (cells$sample_class == "Control-6D") {
+    if (all(cells$sample_class == "Control-6D")) {
         cells <- RenameIdents(object = cells,
                               "0" = "TA", "1" = "Basal", "2" = "TD")
     } else {
@@ -776,68 +728,60 @@ prepare_cells_for_slingshot <- function(cells) {
     return(cells)
 }
 
-cells$d6 <- prepare_cells_for_slingshot(cells$d6)
-cells$d12 <- prepare_cells_for_slingshot(cells$d12)
-cells$ctrl6d <- prepare_cells_for_slingshot(cells$ctrl6d)
-cells$rocki6d <- prepare_cells_for_slingshot(cells$rocki6d)
-cells$ctrl12d <- prepare_cells_for_slingshot(cells$ctrl12d)
-cells$rocki12d <- prepare_cells_for_slingshot(cells$rocki12d)
+for (s in c("d6", "d12", "ctrl6d", "rocki6d", "ctrl12d", "rocki12d")) {
+    cells[[s]] <- prepare_cells_for_slingshot(cells[[s]])
+}
 ```
 
 ## Computing Trajectories
 
 ```{r}
+# Change UMAP values to make figures all similarly oriented
+for (s in c("ctrl12d")) {
+    flipped <- (-1) * Embeddings(object = cells[[s]], reduction = "umap")[, 1]
+    cells[[s]]@reductions$umap@cell.embeddings[, 1] <- flipped
+}
+for (s in c("ctrl6d", "rocki6d")) {
+    flipped <- (-1) * Embeddings(object = cells[[s]], reduction = "umap")[, 2]
+    cells[[s]]@reductions$umap@cell.embeddings[, 2] <- flipped
+}
+
 colors <- colorRampPalette(brewer.pal(11, "Spectral")[-6])(100)
 
-cells$d6_sce <- as.SingleCellExperiment(cells$d6)
-cells$d12_sce <- as.SingleCellExperiment(cells$d12)
-cells$ctrl6d_sce <- as.SingleCellExperiment(cells$ctrl6d)
-cells$rocki6d_sce <- as.SingleCellExperiment(cells$rocki6d)
-cells$ctrl12d_sce <- as.SingleCellExperiment(cells$ctrl12d)
-cells$rocki12d_sce <- as.SingleCellExperiment(cells$rocki12d)
+for (s in c("d6", "d12", "ctrl6d", "rocki6d", "ctrl12d", "rocki12d")) {
+    cells[[paste0(s, "_sce")]] <- as.SingleCellExperiment(cells[[s]])
+}
 
-# Change UMAP values to make figures all similarly oriented
-reducedDim(cells$ctrl6d_sce, "UMAP")[, 2] <- (-1) * reducedDims(cells$ctrl6d_sce)$UMAP[, 2]
-reducedDim(cells$rocki6d_sce, "UMAP")[, 2] <- (-1) * reducedDims(cells$rocki6d_sce)$UMAP[, 2]
-reducedDim(cells$ctrl12d_sce, "UMAP")[, 1] <- (-1) * reducedDims(cells$ctrl12d_sce)$UMAP[, 1]
+sshots <- list()
 
-sshot_6d <- slingshot(cells$d6_sce, Idents(cells$d6),
-                      reducedDim = "HARMONY", start.clus = "Basal")
-sshot_12d <- slingshot(cells$d12_sce, Idents(cells$d12),
-                       reducedDim = "HARMONY", start.clus = "Basal")
+for (s in c("d6", "d12")) {
+    sshots[[s]] <- slingshot(cells[[paste0(s, "_sce")]], Idents(cells[[s]]),
+                             reducedDim = "HARMONY", start.clus = "Basal")
+}
 
-sshot_ctrl6d_separate <- slingshot(cells$ctrl6d_sce,
-                                   Idents(cells$ctrl6d),
-                                   reducedDim = "UMAP", start.clus = "Basal")
-sshot_rocki6d_separate <- slingshot(cells$rocki6d_sce,
-                                    Idents(cells$rocki6d),
-                                    reducedDim = "UMAP", start.clus = "Basal")
-sshot_ctrl12d_separate <- slingshot(cells$ctrl12d_sce,
-                                    Idents(cells$ctrl12d),
-                                    reducedDim = "UMAP", start.clus = "Basal")
-sshot_rocki12d_separate <- slingshot(cells$rocki12d_sce,
-                                     Idents(cells$rocki12d),
-                                     reducedDim = "UMAP", start.clus = "Basal")
+for (s in c("ctrl6d", "rocki6d", "ctrl12d", "rocki12d")) {
+    sshots[[s]] <- slingshot(cells[[paste0(s, "_sce")]], Idents(cells[[s]]),
+                             reducedDim = "UMAP", start.clus = "Basal")
+}
 
-umap_curve_6d <- slingCurves(embedCurves(sshot_6d,
-                                         reducedDims(cells$d6_sce)$UMAP))[[1]]
-umap_curve_12d <- slingCurves(embedCurves(sshot_12d,
-                                          reducedDims(cells$d12_sce)$UMAP))[[1]]
+umap_curves <- list()
 
-umap_curve_ctrl6d <- slingCurves(sshot_ctrl6d_separate)[[1]]
-umap_curve_rocki6d <- slingCurves(sshot_rocki6d_separate)[[1]]
-umap_curve_ctrl12d <- slingCurves(sshot_ctrl12d_separate)[[1]]
-umap_curve_rocki12d <- slingCurves(sshot_rocki12d_separate)[[1]]
+for (s in c("d6", "d12")) {
+    umap_embed <- reducedDims(cells[[paste0(s, "_sce")]])$UMAP
+    umap_curves[[s]] <- slingCurves(embedCurves(sshots[[s]], umap_embed))[[1]]
+}
 
-ctrl6d_idx <- which(cells$d6$treatment_class == "Control")
-rocki6d_idx <- which(cells$d6$treatment_class == "ROCKi")
-ctrl12d_idx <- which(cells$d12$treatment_class == "Control")
-rocki12d_idx <- which(cells$d12$treatment_class == "ROCKi")
+for (s in c("ctrl6d", "rocki6d", "ctrl12d", "rocki12d")) {
+    umap_curves[[s]] <- slingCurves(sshots[[s]])[[1]]
+}
 
-sshot_ctrl6d_together <- sshot_6d[, ctrl6d_idx]
-sshot_rocki6d_together <- sshot_6d[, rocki6d_idx]
-sshot_ctrl12d_together <- sshot_12d[, ctrl12d_idx]
-sshot_rocki12d_together <- sshot_12d[, rocki12d_idx]
+for (num_days in c(6, 12)) {
+    s <- paste0("d", num_days)
+    ctrl_idxs <- which(cells[[s]]$treatment_class == "Control")
+    rocki_idxs <- which(cells[[s]]$treatment_class == "ROCKi")
+    sshots[[paste0("ctrl_", num_days, "d_together")]] <- sshots[[s]][, ctrl_idxs]
+    sshots[[paste0("rocki_", num_days, "d_together")]] <- sshots[[s]][, rocki_idxs]
+}
 
 xmin_sep <- min(reducedDim(cells$ctrl6d_sce, "UMAP")[, 1],
                 reducedDim(cells$rocki6d_sce, "UMAP")[, 1],
@@ -918,33 +862,18 @@ create_traj_umap <- function(sshot_to_plot, umap_curve, cell_types) {
      return(p)
 }
 
-ctrl6d_traj_umap <- create_traj_umap(sshot_ctrl6d_separate, umap_curve_ctrl6d,
-                                     Idents(cells$ctrl6d))
-rocki6d_traj_umap <- create_traj_umap(sshot_rocki6d_separate,
-                                      umap_curve_rocki6d, Idents(cells$rocki6d))
-ctrl12d_traj_umap <- create_traj_umap(sshot_ctrl12d_separate,
-                                      umap_curve_ctrl12d, Idents(cells$ctrl12d))
-rocki12d_traj_umap <- create_traj_umap(sshot_rocki12d_separate,
-                                       umap_curve_rocki12d,
-                                       Idents(cells$rocki12d))
+for (i in list(c("ctrl6d", "fig_7a.tiff"), c("rocki6d", "fig_7b.tiff"),
+               c("ctrl12d", "fig_7c.tiff"), c("rocki12d", "fig_7d.tiff"))) {
+    s <- i[1]
+    out_name <- i[2]
+    traj_umap <- create_traj_umap(sshots[[s]], umap_curves[[s]],
+                                   Idents(cells[[s]])) +
+                  theme(legend.position = "none")
+    print(traj_umap)
 
-(ctrl6d_traj_umap_no_legend <- ctrl6d_traj_umap +
-                               theme(legend.position = "none"))
-(rocki6d_traj_umap_no_legend <- rocki6d_traj_umap +
-                                theme(legend.position = "none"))
-(ctrl12d_traj_umap_no_legend <- ctrl12d_traj_umap +
-                                theme(legend.position = "none"))
-(rocki12d_traj_umap_no_legend <- rocki12d_traj_umap +
-                                 theme(legend.position = "none"))
-
-if (save_images) {
-    save_tiff(ctrl6d_traj_umap_no_legend, "fig_7a.tiff", width = 10, height = 8)
-    save_tiff(rocki6d_traj_umap_no_legend, "fig_7b.tiff", width = 10,
-              height = 8)
-    save_tiff(ctrl12d_traj_umap_no_legend, "fig_7c.tiff", width = 10,
-              height = 8)
-    save_tiff(rocki12d_traj_umap_no_legend, "fig_7d.tiff", width = 10,
-              height = 8)
+    if (save_images) {
+        save_tiff(traj_umap, out_name, width = 10, height = 8)
+    }
 }
 ```
 
@@ -959,8 +888,9 @@ take cell type of a cell to be the cluster to which it belongs to improve the
 appearance of the trajectory plots when colouring by cell type.
 
 ```{r out.width = "100%"}
-cells$d6$cell_type <- Idents(cells$d6)
-cells$d12$cell_type <- Idents(cells$d12)
+for (s in c("d6", "d12")) {
+    cells[[s]]$cell_type <- Idents(cells[[s]])
+}
 
 # mov_avg function copied from stackoverflow.com/a/4862334/6914552
 mov_avg <- function(x, n = 151) {
@@ -983,32 +913,6 @@ create_traj_df <- function(ptimes, name, cell_types) {
                       diff = c(NA, mov_avg(diff(quantiled_data))),
                       sample_class = rep(name, length(quantile_points))))
 }
-
-traj_df_ctrl6d <- create_traj_df(sshot_ctrl6d_together$slingPseudotime_1,
-                                 "Control-6D",
-                                 cells$d6[, ctrl6d_idx]$cell_type)
-traj_df_rocki6d <- create_traj_df(sshot_rocki6d_together$slingPseudotime_1,
-                                  "ROCKi-6D",
-                                  cells$d6[, rocki6d_idx]$cell_type)
-traj_df_6d <- rbind(traj_df_ctrl6d, traj_df_rocki6d)
-
-traj_df_ctrl12d <- create_traj_df(sshot_ctrl12d_together$slingPseudotime_1,
-                                  "Control-12D",
-                                  cells$d12[, ctrl12d_idx]$cell_type)
-traj_df_rocki12d <- create_traj_df(sshot_rocki12d_together$slingPseudotime_1,
-                                   "ROCKi-12D",
-                                   cells$d12[, rocki12d_idx]$cell_type)
-traj_df_12d <- rbind(traj_df_ctrl12d, traj_df_rocki12d)
-
-ptime_abs_diffs_6d <- abs(traj_df_ctrl6d$ptime - traj_df_rocki6d$ptime)
-obs_result_ptime_6d <- mean(ptime_abs_diffs_6d)
-ptime_abs_diffs_12d <- abs(traj_df_ctrl12d$ptime - traj_df_rocki12d$ptime)
-obs_result_ptime_12d <- mean(ptime_abs_diffs_12d)
-
-obs_result_speed_6d <- mean(abs(traj_df_ctrl6d$diff - traj_df_rocki6d$diff),
-                            na.rm = TRUE)
-obs_result_speed_12d <- mean(abs(traj_df_ctrl12d$diff - traj_df_rocki12d$diff),
-                             na.rm = TRUE)
 
 traj_plot_margin_theme <- theme(plot.margin = margin(0.1, 1.2, 0.1, 1.2, "cm"))
 diff_comparison_plots_theme <- theme(legend.title = element_blank())
@@ -1051,17 +955,6 @@ create_traj_plot <- function(traj_df) {
     return(traj_plot)
 }
 
-traj_plot_6d <- create_traj_plot(traj_df_6d)
-traj_plot_12d <- create_traj_plot(traj_df_12d)
-
-(traj_plot_6d_no_legend <- traj_plot_6d + theme(legend.position = "none"))
-(traj_plot_12d_no_legend <- traj_plot_12d + theme(legend.position = "none"))
-
-if (save_images) {
-    save_tiff(traj_plot_6d_no_legend, "fig_7e.tiff", width = 10, height = 8)
-    save_tiff(traj_plot_12d_no_legend, "fig_7f.tiff", width = 10, height = 8)
-}
-
 create_speed_plot <- function(traj_df) {
     speed_plot <- ggplot(traj_df,
                          aes(x = pct, y = diff, group = sample_class)) +
@@ -1080,18 +973,46 @@ create_speed_plot <- function(traj_df) {
     return(speed_plot)
 }
 
-(speed_plot_6d <- create_speed_plot(traj_df_6d) +
-                  theme(legend.position = "none"))
-(speed_plot_12d <- create_speed_plot(traj_df_12d) +
-                   theme(legend.position = "none"))
+obs_results_ptime <- list()
+obs_results_speed <- list()
+for (i in list(c(6, "fig_7e.tiff", "fig_s3a.tiff"),
+               c(12, "fig_7f.tiff", "fig_s3b.tiff"))) {
+    num_days <- i[1]
+    traj_graph_out_name <- i[2]
+    speed_graph_out_name <- i[3]
+    s <- paste0("d", num_days)
+    ctrl_idxs <- which(cells[[s]]$treatment_class == "Control")
+    rocki_idxs <- which(cells[[s]]$treatment_class == "ROCKi")
+    ctrl_cell_types <- cells[[paste0("d", num_days)]][, ctrl_idxs]$cell_type
+    rocki_cell_types <- cells[[paste0("d", num_days)]][, rocki_idxs]$cell_type
+    cp <- sshots[[paste0("ctrl_", num_days, "d_together")]]$slingPseudotime_1
+    rp <- sshots[[paste0("rocki_", num_days, "d_together")]]$slingPseudotime_1
 
-if (save_images) {
-    save_tiff(speed_plot_6d, "fig_s3a.tiff", width = 14, height = 8)
-    save_tiff(speed_plot_12d, "fig_s3b.tiff", width = 14, height = 8)
+    traj_df_ctrl <- create_traj_df(cp, paste0("Control-", num_days, "D"),
+                                   ctrl_cell_types)
+    traj_df_rocki <- create_traj_df(rp, paste0("ROCKi-", num_days, "D"),
+                                    rocki_cell_types)
+    traj_df <- rbind(traj_df_ctrl, traj_df_rocki)
+
+    ptime_abs_diffs <- abs(traj_df_ctrl$ptime - traj_df_rocki$ptime)
+    obs_results_ptime[[paste0("d", num_days)]] <- mean(ptime_abs_diffs)
+
+    speed_abs_diffs <- abs(traj_df_ctrl$diff - traj_df_rocki$diff)
+    obs_results_speed[[paste0("d", num_days)]] <- mean(speed_abs_diffs,
+                                                      na.rm = TRUE)
+
+    traj_plot <- create_traj_plot(traj_df) + theme(legend.position = "none")
+    print(traj_plot)
+    speed_plot <- create_speed_plot(traj_df) + theme(legend.position = "none")
+    print(speed_plot)
+
+    if (save_images) {
+        save_tiff(traj_plot, traj_graph_out_name, width = 10, height = 8)
+        save_tiff(speed_plot, speed_graph_out_name, width = 14, height = 8)
+    }
 }
 
-legend_plot <- ggplot(traj_df_6d,
-                      aes(x = pct, y = ptime, group = sample_class)) +
+legend_plot <- ggplot(traj_df, aes(x = pct, y = ptime, group = sample_class)) +
                geom_point(aes(color = cell_type), size = 3) +
                scale_color_manual(values = c("#80C9EA", "#DD6E79", "#43863E"),
                                   labels = c("Holoclone-forming",
@@ -1099,16 +1020,15 @@ legend_plot <- ggplot(traj_df_6d,
                                              "Differentiated")) +
                theme(legend.title = element_blank(),
                      legend.text = element_text(face = "bold"))
-dot_colour_legend <- as_ggplot(get_legend(legend_plot, "right"))
+(dot_colour_legend <- as_ggplot(get_legend(legend_plot, "right")))
 
-legend_plot <- ggplot(traj_df_6d,
-                      aes(x = pct, y = ptime, group = sample_class)) +
+legend_plot <- ggplot(traj_df, aes(x = pct, y = ptime, group = sample_class)) +
                geom_line(aes(linetype = sample_class), size = 0.4) +
                scale_linetype_manual(values = c("solid", "dashed"),
                                      labels = c("Control", "ROCKi-treated")) +
                theme(legend.title = element_blank(),
                      legend.text = element_text(face = "bold"))
-linetype_legend <- as_ggplot(get_legend(legend_plot, "right"))
+(linetype_legend <- as_ggplot(get_legend(legend_plot, "right")))
 
 (legends <- ggarrange(linetype_legend, dot_colour_legend, ncol = 2))
 if (save_images) {
@@ -1122,34 +1042,27 @@ if (save_images) {
 # Generate bootstrapped data as in "experiment_code_trajectories.R" and save
 # the outputs as "trajectory_comparison_results.txt"
 
+# bs_out = "bootstrap out"
 bs_out <- read.table("trajectory_comparison_results.txt")
 bs_out <- bs_out[, c(3, 4, 5, 6)]
 colnames(bs_out) <- c("TrajDiff6D", "TrajDiff12D", "SpeedDiff6D",
                       "SpeedDiff12D")
 
-diffs_quants_traj6d <- quantile((bs_out$TrajDiff6D - obs_result_ptime_6d),
-                                alpha_vals)
-residuals_traj6d <- as.numeric(obs_result_ptime_6d - diffs_quants_traj6d)
-print(paste("95% confidence interval for difference in pseudotimes at 6D:",
-            paste(residuals_traj6d, collapse = " ")))
+for (num_days in c(6, 12)) {
+    traj_diffs <- bs_out[paste0("TrajDiff", num_days, "D")][, 1]
+    obs_result_ptime <- obs_results_ptime[[paste0("d", num_days)]]
+    diffs_quants_traj <- quantile((traj_diffs - obs_result_ptime), alpha_vals)
+    residuals_traj <- as.numeric(obs_result_ptime - diffs_quants_traj)
+    print(paste0("95% confidence interval for difference in pseudotimes at ",
+                 num_days, "D: ", paste(residuals_traj, collapse = " ")))
 
-diffs_quants_traj12d <- quantile((bs_out$TrajDiff12D - obs_result_ptime_12d),
-                                alpha_vals)
-residuals_traj12d <- as.numeric(obs_result_ptime_12d - diffs_quants_traj12d)
-print(paste("95% confidence interval for difference in pseudotimes at 12D:",
-            paste(residuals_traj12d, collapse = " ")))
-
-diffs_quants_speed6d <- quantile((bs_out$SpeedDiff6D - obs_result_speed_6d),
-                                  alpha_vals)
-residuals_speed6d <- as.numeric(obs_result_speed_6d - diffs_quants_speed6d)
-print(paste("95% confidence interval for difference in speed at 6D:",
-            paste(residuals_speed6d, collapse = " ")))
-
-diffs_quants_speed12d <- quantile((bs_out$SpeedDiff12D - obs_result_speed_12d),
-                                  alpha_vals)
-residuals_speed12d <- as.numeric(obs_result_speed_12d - diffs_quants_speed12d)
-print(paste("95% confidence interval for difference in speed at 12D:",
-            paste(residuals_speed12d, collapse = " ")))
+    speed_diffs <- bs_out[paste0("SpeedDiff", num_days, "D")][, 1]
+    obs_result_speed <- obs_results_speed[[paste0("d", num_days)]]
+    diffs_quants_speed <- quantile((speed_diffs - obs_result_speed), alpha_vals)
+    residuals_speed <- as.numeric(obs_result_speed - diffs_quants_speed)
+    print(paste0("95% confidence interval for difference in speed at ",
+                 num_days, "D: ", paste(residuals_speed, collapse = " ")))
+}
 ```
 
 # Supplementary figures
@@ -1182,7 +1095,7 @@ cells$all_with_outliers$donor_idents <- donor_idents
 cells$all_with_outliers <- cells$all_with_outliers %>%
                            RunHarmony("donor_idents", assay.use = "SCT") %>%
                            RunUMAP(dims = 1:50, reduction = "harmony")
-p <- FeaturePlot(cells$all_with_outliers, "VIM")
+(p <- FeaturePlot(cells$all_with_outliers, "VIM"))
 if (save_images) {
     save_tiff(p, "fig_s4a.tiff", width = 10, height = 8)
 }
@@ -1202,6 +1115,7 @@ for (i in 1:4) {
                    p[[((i - 1) * 4) + 4]] + theme(plot.title = element_blank()),
                    nrow = 1, widths = c(2, 2, 2, 3))
     blended_fp[[i]] <- q
+    print(q)
 }
 save_tiff(ggarrange(plotlist = blended_fp, ncol = 1), "fig_s4b.tiff",
           width = 15, height = 15)
